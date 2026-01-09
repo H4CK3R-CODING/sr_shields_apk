@@ -1,0 +1,100 @@
+# Learn more: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# ---------------------
+# Dependencies
+# ---------------------
+*/node_modules/
+
+
+# ---------------------
+# Expo / React Native
+# ---------------------
+.expo/
+.expo-shared/
+.expo-dev/
+.expo-packager-cache/
+.expo/cache/
+dist/
+web-build/
+expo-env.d.ts
+*.packager-info.json
+.cursor/
+
+# Generated native folders
+/ios
+/android
+android/.gradle/
+android/build/
+ios/DerivedData/
+
+# ---------------------
+# Native / Certificates
+# ---------------------
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# ---------------------
+# Metro bundler
+# ---------------------
+.metro-health-check*
+
+# ---------------------
+# Logs / Debug
+# ---------------------
+logs/
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+lerna-debug.log
+
+# ---------------------
+# Local env files
+# ---------------------
+.env
+.env.*.local
+.env.local
+
+# ---------------------
+# TypeScript
+# ---------------------
+*.tsbuildinfo
+
+# ---------------------
+# Backend / Temp
+# ---------------------
+tmp/
+temp/
+coverage/
+build/
+out/
+
+# ---------------------
+# App specific
+# ---------------------
+app-example
+
+# ---------------------
+# IDE / Editor
+# ---------------------
+.vscode/
+.idea/
+
+# ---------------------
+# OS / System
+# ---------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Swap / temp files
+*.swg
+*.swp
+*.swo

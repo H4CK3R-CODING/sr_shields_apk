@@ -1,0 +1,44 @@
+# Node modules (we install inside container)
+frontend/node_modules
+backend/node_modules
+
+# Logs
+*.log
+*.log.*
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+
+# Git files
+.git
+.gitignore
+
+# Environment files (optional, if you want to keep them outside image)
+.env
+.env.local
+.env.development
+.env.production
+
+# Expo build / cache files
+frontend/.expo
+frontend/.expo-shared
+frontend/dist
+frontend/build
+
+# Backend build / cache files (if any)
+backend/dist
+backend/build
+
+# Dockerfile & compose output (to avoid recursive copy)
+Dockerfile.*
+docker-compose.override.yml
+
+# IDE / editor files
+.vscode
+.idea
+*.iml
+*.sublime-project
+*.sublime-workspace

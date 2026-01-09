@@ -1,0 +1,116 @@
+<svg width="1284" height="2778" viewBox="0 0 1284 2778" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Gradient -->
+  <defs>
+    <radialGradient id="backgroundGradient" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" style="stop-color:#E6F4FE"/>
+      <stop offset="100%" style="stop-color:#B8E4FF"/>
+    </radialGradient>
+    
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E88E5"/>
+      <stop offset="50%" style="stop-color:#2196F3"/>
+      <stop offset="100%" style="stop-color:#42A5F5"/>
+    </linearGradient>
+    
+    <linearGradient id="crossGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4CAF50"/>
+      <stop offset="100%" style="stop-color:#66BB6A"/>
+    </linearGradient>
+    
+    <!-- Floating particles animation -->
+    <circle id="particle" r="3" fill="#FFFFFF" opacity="0.6">
+      <animate attributeName="cy" values="2778;-50" dur="8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;0.6;0" dur="8s" repeatCount="indefinite"/>
+    </circle>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1284" height="2778" fill="url(#backgroundGradient)"/>
+  
+  <!-- Floating particles -->
+  <use href="#particle" x="200" y="2778">
+    <animate attributeName="y" values="2778;-50" dur="12s" repeatCount="indefinite" begin="0s"/>
+  </use>
+  <use href="#particle" x="800" y="2778">
+    <animate attributeName="y" values="2778;-50" dur="10s" repeatCount="indefinite" begin="2s"/>
+  </use>
+  <use href="#particle" x="400" y="2778">
+    <animate attributeName="y" values="2778;-50" dur="14s" repeatCount="indefinite" begin="4s"/>
+  </use>
+  <use href="#particle" x="1000" y="2778">
+    <animate attributeName="y" values="2778;-50" dur="11s" repeatCount="indefinite" begin="1s"/>
+  </use>
+  
+  <!-- Main Logo Container -->
+  <g transform="translate(642, 1200)">
+    <!-- Outer ring with pulse animation -->
+    <circle r="180" fill="none" stroke="url(#logoGradient)" stroke-width="4" opacity="0.3">
+      <animate attributeName="r" values="180;200;180" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.3;0.1;0.3" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    
+    <!-- Inner ring -->
+    <circle r="150" fill="none" stroke="url(#logoGradient)" stroke-width="3" opacity="0.5">
+      <animate attributeName="r" values="150;160;150" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+    
+    <!-- Main logo background circle -->
+    <circle r="120" fill="url(#logoGradient)" drop-shadow="0 10px 30px rgba(33, 150, 243, 0.3)"/>
+    
+    <!-- Medical cross -->
+    <g transform="translate(0, 0)">
+      <!-- Vertical bar of cross -->
+      <rect x="-12" y="-60" width="24" height="120" rx="12" fill="url(#crossGradient)">
+        <animate attributeName="height" values="120;130;120" dur="2s" repeatCount="indefinite"/>
+      </rect>
+      <!-- Horizontal bar of cross -->
+      <rect x="-60" y="-12" width="120" height="24" rx="12" fill="url(#crossGradient)">
+        <animate attributeName="width" values="120;130;120" dur="2s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+    
+    <!-- Heart beat line -->
+    <g transform="translate(0, 80)" opacity="0.8">
+      <path d="M-80,0 L-40,-20 L-20,40 L0,-30 L20,50 L40,-25 L80,0" 
+            stroke="#FF5722" 
+            stroke-width="3" 
+            fill="none" 
+            stroke-linecap="round">
+        <animate attributeName="stroke-dasharray" values="0,400;200,0;0,400" dur="2s" repeatCount="indefinite"/>
+      </path>
+    </g>
+  </g>
+  
+  <!-- App Name -->
+  <text x="642" y="1450" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="600" fill="#1565C0">
+    AarogyaSetu
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="642" y="1500" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="400" fill="#37474F" opacity="0.8">
+    Your Health Bridge
+  </text>
+  
+  <!-- Loading indicator -->
+  <g transform="translate(642, 1600)">
+    <circle r="4" fill="#2196F3" opacity="0.8">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1s" repeatCount="indefinite" begin="0s"/>
+    </circle>
+    <circle r="4" fill="#2196F3" opacity="0.6" transform="translate(20, 0)">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1s" repeatCount="indefinite" begin="0.3s"/>
+    </circle>
+    <circle r="4" fill="#2196F3" opacity="0.4" transform="translate(40, 0)">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1s" repeatCount="indefinite" begin="0.6s"/>
+    </circle>
+  </g>
+  
+  <!-- Bottom decorative elements -->
+  <g transform="translate(642, 2400)" opacity="0.1">
+    <!-- Medical symbols -->
+    <circle r="8" fill="#2196F3" transform="translate(-100, 0)"/>
+    <circle r="6" fill="#4CAF50" transform="translate(-50, 20)"/>
+    <circle r="10" fill="#FF5722" transform="translate(0, 0)"/>
+    <circle r="7" fill="#2196F3" transform="translate(50, -15)"/>
+    <circle r="5" fill="#4CAF50" transform="translate(100, 10)"/>
+  </g>
+</svg>

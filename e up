@@ -1,0 +1,31 @@
+[0;1;32m●[0m docker-desktop.service - Docker Desktop
+     Loaded: loaded (]8;;file://Nano/usr/lib/systemd/user/docker-desktop.service/usr/lib/systemd/user/docker-desktop.service]8;;; [0;1;38;5;185mdisabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Sun 2025-09-14 08:32:36 IST; 8min ago
+   Main PID: 4895 (com.docker.back)
+      Tasks: 150 (limit: 9125)
+     Memory: 1.7G (peak: 2.0G swap: 256.0K swap peak: 256.0K)
+        CPU: 1min 29.097s
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/docker-desktop.service
+             ├─[0;38;5;245m4895 /opt/docker-desktop/bin/com.docker.backend[0m
+             ├─[0;38;5;245m4911 /opt/docker-desktop/bin/com.docker.backend services[0m
+             ├─[0;38;5;245m5056 /opt/docker-desktop/bin/com.docker.build --log-no-timestamp[0m
+             ├─[0;38;5;245m5081 "/opt/docker-desktop/Docker Desktop" --reason=open-tray --analytics-enabled=true --name=dashboard[0m
+             ├─[0;38;5;245m5086 /opt/docker-desktop/bin/virtiofsd --socket-path=/home/aetherionx/.docker/desktop/virtiofs.sock0 --cache=auto --shared-dir=/home --sandbox=none --announce-submounts --xattr --xattrmap=:prefix:all::user.docker.desktop.::bad:all::: --translate-uid squash-guest:0:1000:4294967295 --translate-gid squash-guest:0:1000:4294967295[0m
+             ├─[0;38;5;245m5168 /usr/bin/qemu-system-x86_64 -accel kvm -cpu host -machine q35 -m 1920 -smp 8 -kernel /opt/docker-desktop/linuxkit/kernel -append "init=/init loglevel=1 root=/dev/vdb rootfstype=erofs ro vsyscall=emulate panic=0 eth0.dhcp eth1.dhcp linuxkit.unified_cgroup_hierarchy=1     vpnkit.connect=tcp+connect://192.168.65.2:42389 console=ttyS0" -serial pipe:/tmp/qemu-console4043212782/fifo -netdev user,id=net0,ipv6=off,net=192.168.65.0/24,dhcpstart=192.168.65.9 -device virtio-net-pci,netdev=net0 -vga none -nographic -monitor none -drive if=none,file=/home/aetherionx/.docker/desktop/vms/0/data/Docker.raw,format=raw,id=hd0 -device virtio-blk-pci,drive=hd0,serial=dummyserial -drive if=none,file=/opt/docker-desktop/linuxkit/boot.img,format=raw,id=hd1,readonly=on -device virtio-blk-pci,drive=hd1,serial=dummyserial -object memory-backend-memfd,id=mem,size=1920M,share=on -numa node,memdev=mem -chardev socket,id=char0,path=/home/aetherionx/.docker/desktop/virtiofs.sock0 -device vhost-user-fs-pci,queue-size=1024,chardev=char0,tag=virtiofs0[0m
+             ├─[0;38;5;245m5265 "/opt/docker-desktop/Docker Desktop" --type=zygote --no-zygote-sandbox[0m
+             ├─[0;38;5;245m5281 "/opt/docker-desktop/Docker Desktop" --type=zygote[0m
+             ├─[0;38;5;245m5310 "/opt/docker-desktop/Docker Desktop" --type=zygote[0m
+             ├─[0;38;5;245m5662 "/opt/docker-desktop/Docker Desktop" --type=zygote --no-zygote-sandbox[0m
+             ├─[0;38;5;245m5673 /proc/self/exe --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --enable-crash-reporter=7467d92b-1b0b-4059-bf52-99ef3ef4e90d,no_channel "--user-data-dir=/home/aetherionx/.config/Docker Desktop" --standard-schemes=app --secure-schemes=app --fetch-schemes=dd --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,2298111135462650761,100594901692909329,262144 --enable-features=PdfUseShowSaveFilePicker --disable-features=ScreenAIOCREnabled,SpareRendererForSitePerProcess --variations-seed-version[0m
+             └─[0;38;5;245m5793 "/opt/docker-desktop/Docker Desktop" --type=zygote[0m
+
+Sep 14 08:40:46 Nano com.docker.backend[4895]: [03:10:46.755405620Z][vm.apiproxy           ] [0486] << GET /networks/e0e9b381f840630d4ded7641c8c7eb7e06342c93d828faeb74feb36670f9cf84 (3.158586ms)
+Sep 14 08:40:46 Nano com.docker.backend[4895]: time="2025-09-14T08:40:46.757642385+05:30" level=info msg="<< GET /networks/e0e9b381f840630d4ded7641c8c7eb7e06342c93d828faeb74feb36670f9cf84 (6.31382ms)" component=apiproxy
+Sep 14 08:40:50 Nano com.docker.backend[4895]: [03:10:50.687933229Z][vm.dockerd            ] [0490] 2025/09/14 03:10:50 traces export: rpc error: code = Unimplemented desc = unknown service opentelemetry.proto.collector.trace.v1.TraceService
+Sep 14 08:41:01 Nano com.docker.backend[4895]: time="2025-09-14T08:41:01.701753217+05:30" level=info msg=">> GET /containers/json?all=true" component=apiproxy
+Sep 14 08:41:01 Nano com.docker.backend[4895]: [03:11:01.701091443Z][vm.apiproxy           ] [0501] >> GET /containers/json?all=true
+Sep 14 08:41:01 Nano com.docker.backend[4895]: [03:11:01.703296173Z][vm.apiproxy           ] [0501] << GET /containers/json?all=true (2.151107ms)
+Sep 14 08:41:01 Nano com.docker.backend[4895]: time="2025-09-14T08:41:01.706091617+05:30" level=info msg="<< GET /containers/json?all=true (4.332174ms)" component=apiproxy
+Sep 14 08:41:05 Nano com.docker.backend[4895]: [03:11:05.690828642Z][vm.dockerd            ] [0505] 2025/09/14 03:11:05 traces export: rpc error: code = Unimplemented desc = unknown service opentelemetry.proto.collector.trace.v1.TraceService
+Sep 14 08:41:13 Nano com.docker.backend[4895]: [03:11:13.353496091Z][main.ipc              ] (9b7f4f3f-17) cc04bddd-BackendAPI S<-C f3207494-time GET /time
+Sep 14 08:41:13 Nano com.docker.backend[4895]: [03:11:13.353609932Z][main.ipc              ] (9b7f4f3f-17) cc04bddd-BackendAPI S->C f3207494-time GET /time (109.069µs): 2025-09-14 08:41:13.353567149 +0530 IST m=+516.354723987

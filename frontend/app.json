@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "SR_Shield_CSC",
+    "slug": "frontend",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "frontend",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
+    },
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#E6F4FE"
+    },
+    "android": {
+      "splash": {
+        "image": "./assets/images/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#E6F4FE"
+      },
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/icon.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.aetherionx.frontend",
+      "runtimeVersion": "1.0.0"
+    },
+    "web": {
+      "output": "single",
+      "build": {
+        "babel": {
+          "dangerouslyAllowEval": true
+        }
+      },
+      "bundler": "metro",
+      "favicon": "./assets/images/web.png"
+    },
+    "plugins": [
+      "expo-splash-screen"
+    ],
+    "experiments": {},
+    "extra": {
+      "eas": {
+        "projectId": "db23e781-beac-437f-89a3-a319ab4de4b7"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/db23e781-beac-437f-89a3-a319ab4de4b7"
+    }
+  }
+}
