@@ -9,8 +9,11 @@ import {
   Platform,
   ScrollView,
   Pressable,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
 import useAuthStore from "@/src/state/authStore";
+import { Ionicons } from "@expo/vector-icons";
 
 // Import our reusable components
 import AppHeader from "@/src/components/Auth/AppHeader";
@@ -58,10 +61,16 @@ const roleData = [
 ];
 
 export default function LoginScreen() {
-  const login = useAuthStore((state) => state.login);
+  const { login, isLoading } = useAuthStore();
+  
+  // const [email, setEmail] = useState("");
+  // const [password, setPassword] = useState("");
+  // const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
+
   const [selectedRole, setSelectedRole] = useState(null);
   const [showLoginForm, setShowLoginForm] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+
 
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -111,26 +120,97 @@ export default function LoginScreen() {
     showLoginFormAnimation();
   };
 
-  const handleLogin = async (email, password) => {
-    setIsLoading(true);
+  // const handleLogin = async (email, password) => {
+  //   setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      const userNames = {
-        user: "John Doe",
-        admin: "Admin User",
-      };
+  //   // Simulate API call
+  //   setTimeout(() => {
+  //     const userNames = {
+  //       user: "John Doe",
+  //       admin: "Admin User",
+  //     };
 
-      login(selectedRole, { 
-        name: userNames[selectedRole], 
-        email: email,
-        role: selectedRole 
-      });
-      setIsLoading(false);
-    }, 2000);
-  };
+  //     login(selectedRole, { 
+  //       name: userNames[selectedRole], 
+  //       email: email,
+  //       role: selectedRole 
+  //     });
+  //     setIsLoading(false);
+  //   }, 2000);
+  // };
 
   const selectedRoleData = roleData.find(r => r.role === selectedRole);
+
+
+  // Validate email
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Handle login
+  const handleLogin = async (email, password) => {
+    console.log(`🔐 Login attempt for role: ${selectedRole}, email : ${email} and ${password}`);
+    // Clear previous errors
+    setErrors({});
+
+    // Validation
+    const newErrors = {};
+    
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!validateEmail(email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    // If there are errors, show them
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // Attempt login
+    const result = await login(email.toLowerCase().trim(), password);
+
+    if (result.success) {
+      // Login successful - RootNavigator will handle navigation automatically
+      // Clear form
+      // setEmail("");
+      // setPassword("");
+    } else {
+      // Show error
+      Alert.alert(
+        "Login Failed",
+        result.error || "Invalid email or password. Please try again.",
+        [{ text: "OK" }]
+      );
+    }
+  };
+
+  // Quick login buttons (for demo/testing)
+  // const quickLogin = async (role) => {
+  //   if (role === "admin") {
+  //     setEmail("admin@csc.com");
+  //     setPassword("admin123");
+  //     // Auto-login after setting values
+  //     setTimeout(async () => {
+  //       await login("admin@csc.com", "admin123");
+  //     }, 100);
+  //   } else {
+  //     setEmail("user@csc.com");
+  //     setPassword("user123");
+  //     // Auto-login after setting values
+  //     setTimeout(async () => {
+  //       await login("user@csc.com", "user123");
+  //     }, 100);
+  //   }
+  // };
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-gray-900">
@@ -276,6 +356,56 @@ export default function LoginScreen() {
                 </Animated.View>
               ))}
             </View>
+
+
+          {/* Demo Credentials Card */}
+          <View className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 mt-6">
+            <View className="flex-row items-center mb-4">
+              <Ionicons name="information-circle" size={24} color="#3B82F6" />
+              <Text className="text-blue-800 dark:text-blue-300 font-bold ml-2">
+                Demo Credentials
+              </Text>
+            </View>
+
+            <Text className="text-blue-700 dark:text-blue-400 mb-4">
+              Quick login for testing:
+            </Text>
+
+            {/* Admin Quick Login */}
+            <TouchableOpacity
+              onPress={() => quickLogin("admin")}
+              className="bg-purple-500 rounded-lg py-3 mb-3"
+            >
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="shield-checkmark" size={20} color="white" />
+                <Text className="text-white font-semibold ml-2">
+                  Login as Admin
+                </Text>
+              </View>
+              <Text className="text-white/80 text-xs text-center mt-1">
+                admin@csc.com / admin123
+              </Text>
+            </TouchableOpacity>
+
+            {/* User Quick Login */}
+            <TouchableOpacity
+              onPress={() => quickLogin("user")}
+              className="bg-green-500 rounded-lg py-3"
+            >
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="person" size={20} color="white" />
+                <Text className="text-white font-semibold ml-2">
+                  Login as User
+                </Text>
+              </View>
+              <Text className="text-white/80 text-xs text-center mt-1">
+                user@csc.com / user123
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom Padding */}
+          <View className="h-8" />
 
             {/* Enhanced Footer */}
             <View className="mt-8 mb-6">

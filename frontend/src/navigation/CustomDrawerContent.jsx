@@ -76,8 +76,13 @@ const CustomDrawerContent = ({ navigation, role }) => {
           },
           {
             iconName: "briefcase-outline",
-            label: "Jobs / Forms",
-            screen: "JobsForms",
+            label: "Jobs",
+            screen: "Jobs",
+          },
+          {
+            iconName: "briefcase-outline",
+            label: "Forms",
+            screen: "Forms",
           },
         ],
       },
@@ -152,8 +157,8 @@ const CustomDrawerContent = ({ navigation, role }) => {
   const publicDrawerItems = [
     { iconName: "home-outline", label: "Home", screen: "Welcome" },
     { iconName: "information-circle-outline", label: "About", screen: "About" },
-    { iconName: "information-circle-outline", label: "Setting", screen: "Setting" },
-    { iconName: "information-circle-outline", label: "Help", screen: "Help" },
+    { iconName: "cog", label: "Setting", screen: "Setting" },
+    { iconName: "headset", label: "Help", screen: "Help" },
     { iconName: "log-in-outline", label: "Login", screen: "Login" },
     { iconName: "person-add-outline", label: "Register", screen: "Register" },
   ];

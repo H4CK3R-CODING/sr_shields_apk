@@ -1,4 +1,3 @@
-// src/screens/Support/HelpSupportScreen.jsx
 import React, { useState } from "react";
 import {
   ScrollView,
@@ -7,315 +6,526 @@ import {
   TouchableOpacity,
   TextInput,
   Linking,
-  Dimensions,
+  Alert,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import NavLayout from "@/src/components/Navbar/NavLayout";
 
-const { width } = Dimensions.get('window');
-
-export default function HelpSupportScreen() {
+export default function SupportScreen({ navigation }) {
+  const [activeTab, setActiveTab] = useState("contact");
   const [expandedFaq, setExpandedFaq] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
 
-  const supportOptions = [
+  const contactMethods = [
     {
-      id: 'live-chat',
-      title: 'Live Chat',
-      subtitle: 'Get instant help',
-      icon: 'chatbubble-ellipses',
-      color: '#3B82F6',
-      gradient: ['#3B82F6', '#1D4ED8']
+      id: "phone",
+      icon: "call",
+      title: "Phone Support",
+      subtitle: "Talk to our experts",
+      value: "1800-XXX-XXXX",
+      action: () => Linking.openURL("tel:1800XXXXXXX"),
+      color: "#10B981",
+      gradient: ["#10B981", "#059669"],
     },
     {
-      id: 'call-support',
-      title: 'Call Support',
-      subtitle: '24/7 Emergency line',
-      icon: 'call',
-      color: '#10B981',
-      gradient: ['#10B981', '#047857']
+      id: "email",
+      icon: "mail",
+      title: "Email Support",
+      subtitle: "Get help via email",
+      value: "support@csc.gov.in",
+      action: () => Linking.openURL("mailto:support@csc.gov.in"),
+      color: "#0EA5E9",
+      gradient: ["#0EA5E9", "#0284C7"],
     },
     {
-      id: 'email-support',
-      title: 'Email Support',
-      subtitle: 'Response in 24hrs',
-      icon: 'mail',
-      color: '#F59E0B',
-      gradient: ['#F59E0B', '#D97706']
+      id: "whatsapp",
+      icon: "logo-whatsapp",
+      title: "WhatsApp",
+      subtitle: "Chat with us",
+      value: "+91 XXXXX-XXXXX",
+      action: () => Linking.openURL("whatsapp://send?phone=91XXXXXXXXXX"),
+      color: "#22C55E",
+      gradient: ["#22C55E", "#16A34A"],
     },
     {
-      id: 'appointment',
-      title: 'Book Support Call',
-      subtitle: 'Schedule assistance',
-      icon: 'calendar',
-      color: '#8B5CF6',
-      gradient: ['#8B5CF6', '#7C3AED']
-    }
+      id: "location",
+      icon: "location",
+      title: "Visit Center",
+      subtitle: "Find nearest CSC",
+      value: "Locate on Map",
+      action: () => navigation.navigate("LocateCenter"),
+      color: "#F59E0B",
+      gradient: ["#F59E0B", "#D97706"],
+    },
   ];
 
-  const faqData = [
+  const faqs = [
     {
       id: 1,
-      question: "How do I book an appointment?",
-      answer: "You can book an appointment by navigating to the 'Appointments' section, selecting your preferred doctor, choosing an available time slot, and confirming your booking. You'll receive a confirmation notification."
+      question: "How do I register for CSC services?",
+      answer:
+        "You can register by clicking on the 'Register' button on the welcome screen. Fill in your details including name, mobile number, email, and Aadhaar number. You'll receive an OTP for verification.",
     },
     {
       id: 2,
-      question: "How can I access my medical records?",
-      answer: "Your medical records are available in the 'Health Records' section. You can view, download, or share your records with healthcare providers. All records are securely encrypted and HIPAA compliant."
+      question: "What documents are required for Aadhaar enrollment?",
+      answer:
+        "For Aadhaar enrollment, you need to provide proof of identity (like passport, voter ID, driving license) and proof of address (like passport, bank statement, electricity bill). Original documents are required for verification.",
     },
     {
       id: 3,
-      question: "What should I do in case of emergency?",
-      answer: "For medical emergencies, always call 911 first. For urgent medical questions, you can use our 24/7 emergency chat or call our emergency hotline at +1-800-MEDCARE."
+      question: "How long does it take to get a PAN card?",
+      answer:
+        "After successful application, PAN card is usually dispatched within 15-20 working days to your registered address. You can track your application status using the acknowledgment number.",
     },
     {
       id: 4,
-      question: "How do I update my profile information?",
-      answer: "Go to 'Profile Settings' where you can update your personal information, contact details, insurance information, and emergency contacts. Changes are saved automatically."
+      question: "Can I make bill payments through CSC?",
+      answer:
+        "Yes, you can pay electricity, water, gas, telephone, and other utility bills through CSC. Multiple payment modes are available including cash, card, UPI, and net banking.",
     },
     {
       id: 5,
-      question: "Can I cancel or reschedule appointments?",
-      answer: "Yes, you can cancel or reschedule appointments up to 24 hours before the scheduled time. Go to 'My Appointments' and select the appointment you want to modify."
-    }
+      question: "What are the charges for CSC services?",
+      answer:
+        "Service charges vary depending on the type of service. Most government services have nominal fees as prescribed by the respective departments. You can check specific charges in the service details section.",
+    },
+    {
+      id: 6,
+      question: "Is my data safe with CSC?",
+      answer:
+        "Yes, CSC follows strict security protocols and encryption standards. Your personal information is stored securely and is never shared with unauthorized parties. We comply with all government data protection guidelines.",
+    },
   ];
 
-  const quickLinks = [
-    { title: 'Privacy Policy', icon: 'shield-checkmark', action: () => {} },
-    { title: 'Terms of Service', icon: 'document-text', action: () => {} },
-    { title: 'Account Settings', icon: 'settings', action: () => {} },
-    { title: 'Billing Support', icon: 'card', action: () => {} }
+  const quickHelp = [
+    {
+      icon: "book-outline",
+      title: "User Guide",
+      subtitle: "Step-by-step tutorials",
+      action: () => navigation.navigate("UserGuide"),
+    },
+    {
+      icon: "play-circle-outline",
+      title: "Video Tutorials",
+      subtitle: "Watch how-to videos",
+      action: () => navigation.navigate("VideoTutorials"),
+    },
+    {
+      icon: "document-text-outline",
+      title: "Terms & Conditions",
+      subtitle: "Read our policies",
+      action: () => navigation.navigate("Terms"),
+    },
+    {
+      icon: "shield-checkmark-outline",
+      title: "Privacy Policy",
+      subtitle: "Your data protection",
+      action: () => navigation.navigate("Privacy"),
+    },
   ];
 
-  const handleSupportOption = (optionId) => {
-    switch (optionId) {
-      case 'live-chat':
-        // Navigate to chat screen
-        break;
-      case 'call-support':
-        Linking.openURL('tel:+18002633227');
-        break;
-      case 'email-support':
-        Linking.openURL('mailto:support@medcarepro.com');
-        break;
-      case 'appointment':
-        // Navigate to appointment booking
-        break;
-      default:
-        break;
+  const handleSubmitQuery = () => {
+    if (!email || !subject || !message) {
+      Alert.alert("Error", "Please fill all fields");
+      return;
     }
+    Alert.alert("Success", "Your query has been submitted. We'll get back to you within 24 hours.");
+    setEmail("");
+    setSubject("");
+    setMessage("");
   };
 
-  const filteredFaqs = faqData.filter(faq =>
-    faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const toggleFaq = (id) => {
+    setExpandedFaq(expandedFaq === id ? null : id);
+  };
 
   return (
-    <NavLayout title="Help & Support" showAiChat={false}>
-      <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+    <NavLayout title="Help & Support" showBack={true}>
+      <View className="flex-1 bg-blue-50 dark:bg-gray-900">
+        {/* Tab Navigation */}
+        <View className="bg-white dark:bg-gray-800 px-4 py-3 flex-row gap-2">
+          <TouchableOpacity
+            onPress={() => setActiveTab("contact")}
+            className={`flex-1 py-3 rounded-xl ${
+              activeTab === "contact"
+                ? "bg-blue-600"
+                : "bg-gray-100 dark:bg-gray-700"
+            }`}
+          >
+            <Text
+              className={`text-center font-semibold ${
+                activeTab === "contact"
+                  ? "text-white"
+                  : "text-gray-600 dark:text-gray-300"
+              }`}
+            >
+              Contact Us
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setActiveTab("faq")}
+            className={`flex-1 py-3 rounded-xl ${
+              activeTab === "faq"
+                ? "bg-blue-600"
+                : "bg-gray-100 dark:bg-gray-700"
+            }`}
+          >
+            <Text
+              className={`text-center font-semibold ${
+                activeTab === "faq"
+                  ? "text-white"
+                  : "text-gray-600 dark:text-gray-300"
+              }`}
+            >
+              FAQs
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setActiveTab("query")}
+            className={`flex-1 py-3 rounded-xl ${
+              activeTab === "query"
+                ? "bg-blue-600"
+                : "bg-gray-100 dark:bg-gray-700"
+            }`}
+          >
+            <Text
+              className={`text-center font-semibold ${
+                activeTab === "query"
+                  ? "text-white"
+                  : "text-gray-600 dark:text-gray-300"
+              }`}
+            >
+              Submit Query
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}
+          className="flex-1"
         >
-          {/* Header Section */}
-          <LinearGradient
-            colors={['#3B82F6', '#8B5CF6']}
-            className="mx-4 mt-4 rounded-3xl p-6"
-            style={{borderRadius: 24,}}
-          >
-            <View className="flex-row items-center mb-4">
-              <View className="bg-white/20 rounded-full p-3 mr-4">
-                <Ionicons name="help-circle" size={28} color="white" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-white text-xl font-bold">
-                  How can we help you?
-                </Text>
-                <Text className="text-blue-100 text-sm mt-1">
-                  We're here 24/7 for your support
-                </Text>
-              </View>
-            </View>
-          </LinearGradient>
-
-          {/* Support Options */}
-          <View className="mx-4 mt-6">
-            <Text className="text-gray-900 dark:text-white text-lg font-bold mb-4">
-              Contact Support
-            </Text>
-            <View className="flex-row flex-wrap justify-between">
-              {supportOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.id}
-                  onPress={() => handleSupportOption(option.id)}
-                  className="mb-4"
-                  style={{ width: (width - 48) / 2 - 6 }}
-                >
-                  <LinearGradient
-                    colors={option.gradient}
-                    className="rounded-2xl p-4"
-                    style={{
-                      borderRadius: 24,
-                      shadowColor: option.color,
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 4,
-                      elevation: 3,
-                    }}
-                  >
-                    <Ionicons 
-                      name={option.icon} 
-                      size={24} 
-                      color="white" 
-                      style={{ marginBottom: 8 }}
-                    />
-                    <Text className="text-white font-bold text-sm mb-1">
-                      {option.title}
-                    </Text>
-                    <Text className="text-white/80 text-xs">
-                      {option.subtitle}
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Search FAQ */}
-          <View className="mx-4 mt-6">
-            <Text className="text-gray-900 dark:text-white text-lg font-bold mb-4">
-              Frequently Asked Questions
-            </Text>
-            <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4">
-              <View className="flex-row items-center">
-                <Ionicons 
-                  name="search" 
-                  size={20} 
-                  color="#9CA3AF" 
-                  style={{ marginRight: 12 }}
-                />
-                <TextInput
-                  placeholder="Search FAQs..."
-                  placeholderTextColor="#9CA3AF"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  className="flex-1 text-gray-900 dark:text-white"
-                />
-              </View>
-            </View>
-
-            {/* FAQ List */}
-            <View className="gap-3">
-              {filteredFaqs.map((faq) => (
-                <View 
-                  key={faq.id} 
-                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden"
+          {/* Contact Tab */}
+          {activeTab === "contact" && (
+            <View>
+              {/* Hero Section */}
+              <View className="mx-4 mt-4">
+                <LinearGradient
+                  colors={["#0EA5E9", "#8B5CF6"]}
+                  className="rounded-3xl p-6"
                   style={{
+                    borderRadius: 24,
                     shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 2,
-                    elevation: 1,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 8,
                   }}
                 >
-                  <TouchableOpacity
-                    onPress={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
-                    className="p-4 flex-row items-center justify-between"
-                  >
-                    <Text className="text-gray-900 dark:text-white font-medium flex-1 mr-3">
-                      {faq.question}
+                  <View className="items-center">
+                    <View className="bg-white/20 rounded-full p-4 mb-4">
+                      <Ionicons name="headset" size={32} color="white" />
+                    </View>
+                    <Text className="text-white text-2xl font-bold mb-2">
+                      We're Here to Help
                     </Text>
-                    <Ionicons 
-                      name={expandedFaq === faq.id ? "chevron-up" : "chevron-down"} 
-                      size={20} 
-                      color="#6B7280"
-                    />
+                    <Text className="text-blue-100 text-center">
+                      Choose your preferred way to reach us
+                    </Text>
+                  </View>
+                </LinearGradient>
+              </View>
+
+              {/* Contact Methods */}
+              <View className="mx-4 mt-6 gap-3">
+                {contactMethods.map((method) => (
+                  <TouchableOpacity
+                    key={method.id}
+                    onPress={method.action}
+                    className="active:scale-95"
+                  >
+                    <LinearGradient
+                      colors={method.gradient}
+                      className="rounded-2xl p-4 flex-row items-center"
+                      style={{
+                        borderRadius: 16,
+                        shadowColor: method.color,
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 4,
+                        elevation: 3,
+                      }}
+                    >
+                      <View className="bg-white/20 rounded-full p-3 mr-4">
+                        <Ionicons name={method.icon} size={24} color="white" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-white text-lg font-bold">
+                          {method.title}
+                        </Text>
+                        <Text className="text-white/80 text-sm mb-1">
+                          {method.subtitle}
+                        </Text>
+                        <Text className="text-white font-semibold">
+                          {method.value}
+                        </Text>
+                      </View>
+                      <View className="bg-white/20 rounded-full p-2">
+                        <Ionicons
+                          name="arrow-forward"
+                          size={18}
+                          color="white"
+                        />
+                      </View>
+                    </LinearGradient>
                   </TouchableOpacity>
-                  {expandedFaq === faq.id && (
-                    <View className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
-                      <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5 mt-3">
-                        {faq.answer}
+                ))}
+              </View>
+
+              {/* Quick Help */}
+              <View className="mx-4 mt-6">
+                <Text className="text-gray-900 dark:text-white text-lg font-bold mb-4">
+                  Quick Help
+                </Text>
+                <View className="gap-3">
+                  {quickHelp.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={item.action}
+                      className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex-row items-center"
+                      style={{
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }}
+                    >
+                      <View className="bg-blue-100 dark:bg-blue-600 rounded-full p-3 mr-4">
+                        <Ionicons name={item.icon} size={20} color="#0EA5E9" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-gray-900 dark:text-white font-bold">
+                          {item.title}
+                        </Text>
+                        <Text className="text-gray-600 dark:text-gray-300 text-sm">
+                          {item.subtitle}
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color="#9CA3AF"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Operating Hours */}
+              <View className="mx-4 mt-6 mb-4">
+                <View
+                  className="bg-white dark:bg-gray-800 rounded-2xl p-6"
+                  style={{
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}
+                >
+                  <View className="flex-row items-center mb-4">
+                    <Ionicons name="time-outline" size={24} color="#0EA5E9" />
+                    <Text className="text-gray-900 dark:text-white text-lg font-bold ml-2">
+                      Operating Hours
+                    </Text>
+                  </View>
+                  <View className="gap-2">
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-600 dark:text-gray-300">
+                        Monday - Friday
+                      </Text>
+                      <Text className="text-gray-900 dark:text-white font-semibold">
+                        9:00 AM - 6:00 PM
                       </Text>
                     </View>
-                  )}
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-600 dark:text-gray-300">
+                        Saturday
+                      </Text>
+                      <Text className="text-gray-900 dark:text-white font-semibold">
+                        10:00 AM - 4:00 PM
+                      </Text>
+                    </View>
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-600 dark:text-gray-300">
+                        Sunday
+                      </Text>
+                      <Text className="text-red-600 dark:text-red-400 font-semibold">
+                        Closed
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-              ))}
+              </View>
             </View>
-          </View>
+          )}
 
-          {/* Quick Links */}
-          <View className="mx-4 mt-6">
-            <Text className="text-gray-900 dark:text-white text-lg font-bold mb-4">
-              Quick Links
-            </Text>
-            <View className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden">
-              {quickLinks.map((link, index) => (
+          {/* FAQ Tab */}
+          {activeTab === "faq" && (
+            <View className="mx-4 mt-4">
+              <View className="bg-blue-100 dark:bg-blue-900 rounded-2xl p-4 mb-4 flex-row items-center">
+                <Ionicons
+                  name="information-circle"
+                  size={24}
+                  color="#0EA5E9"
+                />
+                <Text className="text-blue-900 dark:text-blue-100 ml-3 flex-1">
+                  Find quick answers to common questions
+                </Text>
+              </View>
+
+              {faqs.map((faq) => (
                 <TouchableOpacity
-                  key={index}
-                  onPress={link.action}
-                  className={`p-4 flex-row items-center ${
-                    index !== quickLinks.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''
-                  }`}
+                  key={faq.id}
+                  onPress={() => toggleFaq(faq.id)}
+                  className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-3"
+                  style={{
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}
                 >
-                  <View className="bg-blue-100 dark:bg-blue-600/20 rounded-full p-2 mr-3">
-                    <Ionicons 
-                      name={link.icon} 
-                      size={18} 
-                      color="#3B82F6"
+                  <View className="flex-row items-start justify-between">
+                    <View className="flex-1 mr-3">
+                      <Text className="text-gray-900 dark:text-white font-bold mb-1">
+                        {faq.question}
+                      </Text>
+                      {expandedFaq === faq.id && (
+                        <Text className="text-gray-600 dark:text-gray-300 mt-2 leading-5">
+                          {faq.answer}
+                        </Text>
+                      )}
+                    </View>
+                    <Ionicons
+                      name={
+                        expandedFaq === faq.id
+                          ? "chevron-up"
+                          : "chevron-down"
+                      }
+                      size={20}
+                      color="#9CA3AF"
                     />
                   </View>
-                  <Text className="text-gray-900 dark:text-white font-medium flex-1">
-                    {link.title}
-                  </Text>
-                  <Ionicons 
-                    name="chevron-forward" 
-                    size={18} 
-                    color="#9CA3AF"
-                  />
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
+          )}
 
-          {/* Feedback Section */}
-          <View className="mx-4 mt-6">
-            <View className="bg-white dark:bg-gray-800 rounded-2xl p-6">
-              <Text className="text-gray-900 dark:text-white text-lg font-bold mb-4">
-                Send Feedback
-              </Text>
-              <TextInput
-                placeholder="Tell us how we can improve..."
-                placeholderTextColor="#9CA3AF"
-                multiline
-                numberOfLines={4}
-                value={feedbackMessage}
-                onChangeText={setFeedbackMessage}
-                className="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 text-gray-900 dark:text-white mb-4"
-                textAlignVertical="top"
-              />
-              <TouchableOpacity className="bg-blue-600 rounded-xl py-3 flex-row items-center justify-center">
-                <Ionicons name="send" size={18} color="white" />
-                <Text className="text-white font-semibold ml-2">Send Feedback</Text>
-              </TouchableOpacity>
+          {/* Submit Query Tab */}
+          {activeTab === "query" && (
+            <View className="mx-4 mt-4">
+              <View
+                className="bg-white dark:bg-gray-800 rounded-3xl p-6"
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
+              >
+                <View className="flex-row items-center mb-6">
+                  <View className="bg-blue-100 dark:bg-blue-600 rounded-full p-3 mr-3">
+                    <Ionicons
+                      name="chatbubble-ellipses"
+                      size={20}
+                      color="#0EA5E9"
+                    />
+                  </View>
+                  <Text className="text-gray-900 dark:text-white text-xl font-bold">
+                    Submit Your Query
+                  </Text>
+                </View>
+
+                <View className="gap-4">
+                  <View>
+                    <Text className="text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                      Email Address *
+                    </Text>
+                    <TextInput
+                      value={email}
+                      onChangeText={setEmail}
+                      placeholder="your.email@example.com"
+                      keyboardType="email-address"
+                      className="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 text-gray-900 dark:text-white"
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  </View>
+
+                  <View>
+                    <Text className="text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                      Subject *
+                    </Text>
+                    <TextInput
+                      value={subject}
+                      onChangeText={setSubject}
+                      placeholder="What is your query about?"
+                      className="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 text-gray-900 dark:text-white"
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  </View>
+
+                  <View>
+                    <Text className="text-gray-700 dark:text-gray-300 mb-2 font-semibold">
+                      Message *
+                    </Text>
+                    <TextInput
+                      value={message}
+                      onChangeText={setMessage}
+                      placeholder="Describe your issue in detail..."
+                      multiline
+                      numberOfLines={6}
+                      textAlignVertical="top"
+                      className="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 text-gray-900 dark:text-white"
+                      placeholderTextColor="#9CA3AF"
+                      style={{ minHeight: 120 }}
+                    />
+                  </View>
+
+                  <TouchableOpacity onPress={handleSubmitQuery}>
+                    <LinearGradient
+                      colors={["#0EA5E9", "#0284C7"]}
+                      className="rounded-xl p-4 flex-row items-center justify-center"
+                      style={{ borderRadius: 12 }}
+                    >
+                      <Ionicons name="send" size={20} color="white" />
+                      <Text className="text-white font-bold ml-2 text-base">
+                        Submit Query
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <View className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 flex-row">
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={20}
+                      color="#F59E0B"
+                    />
+                    <Text className="text-yellow-800 dark:text-yellow-200 text-sm ml-2 flex-1">
+                      We typically respond within 24 hours during business days
+                    </Text>
+                  </View>
+                </View>
+              </View>
             </View>
-          </View>
-
-          {/* Emergency Contact */}
-          <View className="mx-4 mt-6">
-            <TouchableOpacity
-              onPress={() => Linking.openURL('tel:911')}
-              className="bg-red-600 rounded-2xl p-4 flex-row items-center justify-center"
-            >
-              <Ionicons name="warning" size={20} color="white" />
-              <Text className="text-white font-bold ml-2">
-                Emergency? Call 911
-              </Text>
-            </TouchableOpacity>
-          </View>
+          )}
         </ScrollView>
       </View>
     </NavLayout>

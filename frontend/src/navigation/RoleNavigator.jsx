@@ -1,10 +1,7 @@
 // src/navigation/RoleNavigator.jsx
 import React from "react";
-import PatientNavigator from "./PatientNavigator";
-import DoctorNavigator from "./DoctorNavigator";
 import AdminNavigator from "./AdminNavigator";
 import UserNavigator from "./UserNavigator";
-import MedicalStaffNavigator from "./MedicalStaffNavigator";
 import useAuthStore from "../state/authStore";
 
 export default function RoleNavigator() {

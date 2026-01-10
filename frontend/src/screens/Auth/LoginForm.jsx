@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity } from 'react-native';
-import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
-import CustomButton from '@/src/components/CustomButton';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
+import CustomButton from "@/src/components/CustomButton";
 
 /**
  * Reusable Login Form Component
@@ -10,16 +16,25 @@ import CustomButton from '@/src/components/CustomButton';
  * @param {function} onClose - Close handler
  * @param {boolean} isLoading - Loading state
  */
-export default function LoginForm({ roleInfo, onLogin, onClose, isLoading = false }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export default function LoginForm({
+  roleInfo,
+  onLogin,
+  onClose,
+  isLoading = false,
+}) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const renderIcon = () => {
     const { icon, iconLib } = roleInfo;
-    const IconComponent = iconLib === "FontAwesome5" ? FontAwesome5 : 
-                         iconLib === "MaterialIcons" ? MaterialIcons : Ionicons;
-    
+    const IconComponent =
+      iconLib === "FontAwesome5"
+        ? FontAwesome5
+        : iconLib === "MaterialIcons"
+          ? MaterialIcons
+          : Ionicons;
+
     return <IconComponent name={icon} size={24} color="white" />;
   };
 
@@ -32,11 +47,17 @@ export default function LoginForm({ roleInfo, onLogin, onClose, isLoading = fals
   const isFormValid = email.trim() && password.trim();
 
   return (
-    <ScrollView className="px-6 py-8 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" bounces={false} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      className="px-6 py-8 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"
+      bounces={false}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Header */}
       <View className="flex-row items-center justify-between mb-6">
         <View className="flex-row items-center">
-          <View className={`w-12 h-12 bg-gradient-to-br ${roleInfo.gradient} ${roleInfo.darkGradient} rounded-2xl items-center justify-center mr-3`}>
+          <View
+            className={`w-12 h-12 bg-gradient-to-br ${roleInfo.gradient} ${roleInfo.darkGradient} rounded-2xl items-center justify-center mr-3`}
+          >
             {renderIcon()}
           </View>
           <View>
@@ -84,7 +105,7 @@ export default function LoginForm({ roleInfo, onLogin, onClose, isLoading = fals
               editable={!isLoading}
             />
             {email.length > 0 && (
-              <TouchableOpacity onPress={() => setEmail('')}>
+              <TouchableOpacity onPress={() => setEmail("")}>
                 <Ionicons name="close-circle" size={20} color="#6B7280" />
               </TouchableOpacity>
             )}
@@ -109,10 +130,10 @@ export default function LoginForm({ roleInfo, onLogin, onClose, isLoading = fals
               editable={!isLoading}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Ionicons 
-                name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                size={20} 
-                color="#6B7280" 
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={20}
+                color="#6B7280"
               />
             </TouchableOpacity>
           </View>
@@ -151,7 +172,8 @@ export default function LoginForm({ roleInfo, onLogin, onClose, isLoading = fals
           <View className="flex-row items-center">
             <Ionicons name="shield-checkmark" size={16} color="#10B981" />
             <Text className="text-xs text-gray-600 dark:text-gray-400 ml-2">
-              Your data is encrypted and secure. We follow HIPAA compliance standards.
+              Your data is encrypted and secure. We follow HIPAA compliance
+              standards.
             </Text>
           </View>
         </View>

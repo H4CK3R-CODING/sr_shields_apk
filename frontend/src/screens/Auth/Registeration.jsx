@@ -1,905 +1,691 @@
-import React, { useState } from 'react';
+// src/screens/Auth/RegistrationPage.jsx
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
-  StatusBar,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+  Alert,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import useAuthStore from "../../state/authStore";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-const RegistrationPage = () => {
-  const [selectedRole, setSelectedRole] = useState('patient');
+export default function RegistrationPage({ navigation }) {
+  const { register } = useAuthStore();
+  
+  // Form state
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    // Patient specific
-    dateOfBirth: '',
-    gender: '',
-    emergencyContact: '',
-    medicalHistory: '',
-    // Doctor specific
-    licenseNumber: '',
-    specialization: '',
-    hospital: '',
-    experience: '',
-    qualifications: '',
-    consultationFee: '',
-    // Medical Staff specific
-    staffId: '',
-    department: '',
-    position: '',
-    // Common address fields
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
+    fullName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    role: "user", // user or admin
+    // Admin specific fields
+    adminCode: "",
+    department: "",
+    employeeId: "",
+    // User specific fields
+    address: "",
+    dateOfBirth: "",
+    gender: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [formErrors, setFormErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [step, setStep] = useState(1); // Multi-step form: 1 = Basic Info, 2 = Role Selection, 3 = Additional Info
 
-  const roles = [
-    { key: 'patient', label: 'Patient', icon: 'person-outline' },
-    { key: 'doctor', label: 'Doctor', icon: 'medical-outline' },
-    { key: 'medical', label: 'Medical Staff', icon: 'business-outline' },
-  ];
-
-  const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
-  
-  const specializations = [
-    'General Medicine', 'Cardiology', 'Neurology', 'Orthopedics', 'Pediatrics',
-    'Dermatology', 'Psychiatry', 'Surgery', 'Oncology', 'Radiology',
-  ];
-
-  const departments = [
-    'Emergency', 'ICU', 'Surgery', 'Pediatrics', 'Cardiology', 
-    'Neurology', 'Orthopedics', 'Laboratory', 'Radiology', 'Pharmacy',
-  ];
-
-  // Responsive calculations
-  const isSmallScreen = screenWidth < 360;
-  const isMediumScreen = screenWidth >= 360 && screenWidth < 414;
-  const isLargeScreen = screenWidth >= 414;
-
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    
-    // Clear specific field error when user starts typing
-    if (formErrors[field]) {
-      setFormErrors(prev => ({
-        ...prev,
-        [field]: null
-      }));
-    }
-  };
-
-  const handleRoleChange = (role) => {
-    setSelectedRole(role);
-    setFormData(prev => ({
-      ...prev,
-      // Reset role-specific fields
-      dateOfBirth: '',
-      gender: '',
-      emergencyContact: '',
-      medicalHistory: '',
-      licenseNumber: '',
-      specialization: '',
-      hospital: '',
-      experience: '',
-      qualifications: '',
-      consultationFee: '',
-      staffId: '',
-      department: '',
-      position: '',
-    }));
-    setFormErrors({});
-  };
-
-  const validateForm = () => {
-    const errors = {};
-    const commonRequiredFields = ['firstName', 'lastName', 'email', 'phone', 'password'];
-    let roleSpecificFields = [];
-
-    switch (selectedRole) {
-      case 'patient':
-        roleSpecificFields = ['dateOfBirth', 'gender'];
-        break;
-      case 'doctor':
-        roleSpecificFields = ['licenseNumber', 'specialization'];
-        break;
-      case 'medical':
-        roleSpecificFields = ['staffId', 'department', 'position'];
-        break;
-    }
-
-    const requiredFields = [...commonRequiredFields, ...roleSpecificFields];
-    
-    // Check required fields
-    requiredFields.forEach(field => {
-      if (!formData[field] || !formData[field].toString().trim()) {
-        errors[field] = 'This field is required';
-      }
-    });
-
-    // Password validation
-    if (formData.password && formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters long';
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-
-    // Email validation
+  // Validate email format
+  const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.email && !emailRegex.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
+    return emailRegex.test(email);
+  };
+
+  // Validate phone number
+  const isValidPhone = (phone) => {
+    const phoneRegex = /^[0-9]{10}$/;
+    return phoneRegex.test(phone.replace(/\s/g, ""));
+  };
+
+  // Validate password strength
+  const isStrongPassword = (password) => {
+    // At least 8 characters, 1 uppercase, 1 lowercase, 1 number
+    return password.length >= 8 && 
+           /[A-Z]/.test(password) && 
+           /[a-z]/.test(password) && 
+           /[0-9]/.test(password);
+  };
+
+  // Validate Step 1 (Basic Info)
+  const validateStep1 = () => {
+    const newErrors = {};
+
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full name is required";
+    } else if (formData.fullName.trim().length < 3) {
+      newErrors.fullName = "Name must be at least 3 characters";
     }
 
-    // Phone validation
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    if (formData.phone && !phoneRegex.test(formData.phone.replace(/\s/g, ''))) {
-      errors.phone = 'Please enter a valid phone number';
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!isValidEmail(formData.email)) {
+      newErrors.email = "Invalid email format";
     }
 
-    // Date of birth validation for patients
-    if (selectedRole === 'patient' && formData.dateOfBirth) {
-      const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
-      if (!dateRegex.test(formData.dateOfBirth)) {
-        errors.dateOfBirth = 'Please enter date in MM/DD/YYYY format';
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!isValidPhone(formData.phone)) {
+      newErrors.phone = "Invalid phone number (10 digits required)";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (!isStrongPassword(formData.password)) {
+      newErrors.password = "Password must be 8+ chars with uppercase, lowercase, and number";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Validate Step 3 (Additional Info)
+  const validateStep3 = () => {
+    const newErrors = {};
+
+    if (formData.role === "admin") {
+      if (!formData.adminCode.trim()) {
+        newErrors.adminCode = "Admin code is required";
+      } else if (formData.adminCode !== "CSC2024ADMIN") {
+        newErrors.adminCode = "Invalid admin code";
+      }
+
+      if (!formData.department.trim()) {
+        newErrors.department = "Department is required";
+      }
+
+      if (!formData.employeeId.trim()) {
+        newErrors.employeeId = "Employee ID is required";
+      }
+    } else {
+      if (!formData.address.trim()) {
+        newErrors.address = "Address is required";
+      }
+
+      if (!formData.dateOfBirth.trim()) {
+        newErrors.dateOfBirth = "Date of birth is required";
+      }
+
+      if (!formData.gender) {
+        newErrors.gender = "Please select gender";
       }
     }
 
-    // Experience validation for doctors
-    if (selectedRole === 'doctor' && formData.experience && isNaN(formData.experience)) {
-      errors.experience = 'Please enter a valid number';
-    }
-
-    // Consultation fee validation for doctors
-    if (selectedRole === 'doctor' && formData.consultationFee && isNaN(formData.consultationFee)) {
-      errors.consultationFee = 'Please enter a valid amount';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      const registrationData = {
-        ...formData,
-        role: selectedRole,
-        timestamp: new Date().toISOString()
+  // Handle Next button
+  const handleNext = () => {
+    if (step === 1 && validateStep1()) {
+      setStep(2);
+    } else if (step === 2) {
+      setStep(3);
+    }
+  };
+
+  // Handle Back button
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+      setErrors({});
+    }
+  };
+
+  // Handle Registration
+  const handleRegister = async () => {
+    if (!validateStep3()) return;
+
+    setLoading(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Prepare user data
+      const userData = {
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
+        role: formData.role,
+        confirmPassword: formData.confirmPassword,
+        createdAt: new Date().toISOString(),
       };
-      
+
+      const [day, month, year] = formData.dateOfBirth.trim().split("/");
+
+      // Add role-specific data
+      if (formData.role === "admin") {
+        userData.department = formData.department.trim();
+        userData.employeeId = formData.employeeId.trim();
+      } else {
+        userData.address = formData.address.trim();
+        userData.dateOfBirth = new Date(`${year}-${month}-${day}`);
+        userData.gender = formData.gender.toLowerCase();
+      }
+
+      // Call register function from auth store
+      console.log("Registering user with data:", userData);
+      await register(userData, formData.password);
+
       Alert.alert(
-        'Success', 
-        `${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} registration submitted successfully!`,
+        "Success!",
+        `Your ${formData.role} account has been created successfully. Please login to continue.`,
         [
           {
-            text: 'OK',
-            onPress: () => {
-              console.log('Registration Data:', registrationData);
-              // Reset form after successful submission
-              setFormData({
-                firstName: '',
-                lastName: '',
-                email: '',
-                phone: '',
-                password: '',
-                confirmPassword: '',
-                dateOfBirth: '',
-                gender: '',
-                emergencyContact: '',
-                medicalHistory: '',
-                licenseNumber: '',
-                specialization: '',
-                hospital: '',
-                experience: '',
-                qualifications: '',
-                consultationFee: '',
-                staffId: '',
-                department: '',
-                position: '',
-                address: '',
-                city: '',
-                state: '',
-                zipCode: '',
-              });
-              setFormErrors({});
-            }
-          }
+            text: "OK",
+            onPress: () => navigation.navigate("Login"),
+          },
         ]
       );
-    } else {
-      Alert.alert('Error', 'Please correct the highlighted fields');
+    } catch (error) {
+      Alert.alert("Error", error.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const CustomTextInput = ({ 
-    label, 
-    placeholder, 
-    value, 
-    onChangeText, 
-    required = false, 
-    keyboardType = 'default', 
-    multiline = false, 
-    numberOfLines = 1,
-    secureTextEntry = false,
-    autoCapitalize = 'sentences',
-    icon,
-    rightElement,
-    fieldName
-  }) => {
-    const hasError = formErrors[fieldName];
-    
-    return (
-      <View className={`${multiline ? 'mb-6' : 'mb-4'}`}>
-        <View className="flex-row items-center mb-2">
-          {icon && (
-            <Ionicons
-              name={icon}
-              size={16}
-              color="#9CA3AF"
-              style={{ marginRight: 8 }}
-            />
-          )}
-          <Text className={`${isSmallScreen ? 'text-sm' : 'text-base'} font-medium ${hasError ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'}`}>
-            {label} {required && <Text className="text-red-500">*</Text>}
-          </Text>
-        </View>
-        <View className="relative">
-          <TextInput
-            className={`${isSmallScreen ? 'px-3 py-2.5' : 'px-4 py-3'} ${rightElement ? 'pr-12' : ''} ${isSmallScreen ? 'text-sm' : 'text-base'} text-gray-800 dark:text-white bg-gray-50 dark:bg-gray-700 border ${hasError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:border-blue-500`}
-            placeholder={placeholder}
-            placeholderTextColor="#9CA3AF"
-            value={value}
-            onChangeText={onChangeText}
-            keyboardType={keyboardType}
-            multiline={multiline}
-            numberOfLines={numberOfLines}
-            secureTextEntry={secureTextEntry}
-            autoCapitalize={autoCapitalize}
-            style={{ 
-              minHeight: multiline ? (isSmallScreen ? 60 : 80) : (isSmallScreen ? 40 : 48),
-              textAlignVertical: multiline ? 'top' : 'center'
-            }}
-          />
-          {rightElement && (
-            <View className={`absolute right-3 ${isSmallScreen ? 'top-2.5' : 'top-3'}`}>
-              {rightElement}
-            </View>
-          )}
-        </View>
-        {hasError && (
-          <Text className="text-red-500 text-sm mt-1">{hasError}</Text>
-        )}
-      </View>
-    );
+  // Update form field
+  const updateField = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+    // Clear error for this field
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: null });
+    }
   };
 
-  const GenderSelector = () => (
-    <View className="mb-4">
-      <Text className={`${isSmallScreen ? 'text-sm' : 'text-base'} font-medium mb-2 ${formErrors.gender ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'}`}>
-        Gender <Text className="text-red-500">*</Text>
+  // Render Step 1: Basic Information
+  const renderStep1 = () => (
+    <View>
+      <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+        Create Account
       </Text>
-      <View className="flex-row flex-wrap">
-        {genderOptions.map((gender) => (
-          <TouchableOpacity
-            key={gender}
-            className={`mr-2 mb-2 px-3 py-2 rounded-full border ${
-              formData.gender === gender
-                ? 'bg-blue-100 dark:bg-blue-900 border-blue-500'
-                : 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600'
-            }`}
-            onPress={() => handleInputChange('gender', gender)}
-            activeOpacity={0.7}
-          >
-            <Text
-              className={`${isSmallScreen ? 'text-sm' : 'text-base'} ${
-                formData.gender === gender
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 dark:text-gray-400'
-              }`}
-            >
-              {gender}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      <Text className="text-gray-600 dark:text-gray-400 mb-6">
+        Enter your basic information to get started
+      </Text>
+
+      {/* Full Name */}
+      <View className="mb-4">
+        <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+          Full Name *
+        </Text>
+        <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.fullName ? 'border-2 border-red-500' : ''}`}>
+          <Ionicons name="person-outline" size={20} color="#9CA3AF" />
+          <TextInput
+            placeholder="Enter your full name"
+            value={formData.fullName}
+            onChangeText={(text) => updateField("fullName", text)}
+            className="flex-1 p-4 text-gray-800 dark:text-white"
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
+        {errors.fullName && (
+          <Text className="text-red-500 text-sm mt-1 ml-1">{errors.fullName}</Text>
+        )}
       </View>
-      {formErrors.gender && (
-        <Text className="text-red-500 text-sm mt-1">{formErrors.gender}</Text>
-      )}
+
+      {/* Email */}
+      <View className="mb-4">
+        <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+          Email Address *
+        </Text>
+        <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.email ? 'border-2 border-red-500' : ''}`}>
+          <Ionicons name="mail-outline" size={20} color="#9CA3AF" />
+          <TextInput
+            placeholder="Enter your email"
+            value={formData.email}
+            onChangeText={(text) => updateField("email", text)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            className="flex-1 p-4 text-gray-800 dark:text-white"
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
+        {errors.email && (
+          <Text className="text-red-500 text-sm mt-1 ml-1">{errors.email}</Text>
+        )}
+      </View>
+
+      {/* Phone */}
+      <View className="mb-4">
+        <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+          Phone Number *
+        </Text>
+        <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.phone ? 'border-2 border-red-500' : ''}`}>
+          <Ionicons name="call-outline" size={20} color="#9CA3AF" />
+          <TextInput
+            placeholder="10-digit phone number"
+            value={formData.phone}
+            onChangeText={(text) => updateField("phone", text)}
+            keyboardType="phone-pad"
+            maxLength={10}
+            className="flex-1 p-4 text-gray-800 dark:text-white"
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
+        {errors.phone && (
+          <Text className="text-red-500 text-sm mt-1 ml-1">{errors.phone}</Text>
+        )}
+      </View>
+
+      {/* Password */}
+      <View className="mb-4">
+        <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+          Password *
+        </Text>
+        <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.password ? 'border-2 border-red-500' : ''}`}>
+          <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
+          <TextInput
+            placeholder="Create a strong password"
+            value={formData.password}
+            onChangeText={(text) => updateField("password", text)}
+            secureTextEntry={!showPassword}
+            className="flex-1 p-4 text-gray-800 dark:text-white"
+            placeholderTextColor="#9CA3AF"
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? "eye-outline" : "eye-off-outline"}
+              size={20}
+              color="#9CA3AF"
+            />
+          </TouchableOpacity>
+        </View>
+        {errors.password && (
+          <Text className="text-red-500 text-sm mt-1 ml-1">{errors.password}</Text>
+        )}
+      </View>
+
+      {/* Confirm Password */}
+      <View className="mb-6">
+        <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+          Confirm Password *
+        </Text>
+        <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.confirmPassword ? 'border-2 border-red-500' : ''}`}>
+          <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
+          <TextInput
+            placeholder="Re-enter your password"
+            value={formData.confirmPassword}
+            onChangeText={(text) => updateField("confirmPassword", text)}
+            secureTextEntry={!showConfirmPassword}
+            className="flex-1 p-4 text-gray-800 dark:text-white"
+            placeholderTextColor="#9CA3AF"
+          />
+          <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+            <Ionicons
+              name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+              size={20}
+              color="#9CA3AF"
+            />
+          </TouchableOpacity>
+        </View>
+        {errors.confirmPassword && (
+          <Text className="text-red-500 text-sm mt-1 ml-1">{errors.confirmPassword}</Text>
+        )}
+      </View>
     </View>
   );
 
-  const PasswordStrengthIndicator = ({ password }) => {
-    const getStrength = () => {
-      if (password.length < 6) return { level: 0, text: 'Too short', color: '#EF4444' };
-      if (password.length < 8) return { level: 2, text: 'Fair', color: '#F59E0B' };
-      if (password.length < 10) return { level: 3, text: 'Good', color: '#3B82F6' };
-      return { level: 4, text: 'Strong', color: '#10B981' };
-    };
+  // Render Step 2: Role Selection
+  const renderStep2 = () => (
+    <View>
+      <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+        Select Your Role
+      </Text>
+      <Text className="text-gray-600 dark:text-gray-400 mb-6">
+        Choose the type of account you want to create
+      </Text>
 
-    const strength = getStrength();
-
-    return (
-      <View className="mb-2">
-        <View className="flex-row space-x-1">
-          {[...Array(4)].map((_, i) => (
-            <View
-              key={i}
-              className="flex-1 h-1 rounded"
-              style={{
-                backgroundColor: i < strength.level ? strength.color : '#D1D5DB'
-              }}
-            />
-          ))}
+      {/* User Role Card */}
+      <TouchableOpacity
+        onPress={() => updateField("role", "user")}
+        className={`rounded-2xl p-6 mb-4 border-2 ${
+          formData.role === "user"
+            ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500"
+            : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+        }`}
+        activeOpacity={0.7}
+      >
+        <View className="flex-row items-center mb-3">
+          <View className={`w-16 h-16 rounded-2xl items-center justify-center ${
+            formData.role === "user" ? "bg-blue-500" : "bg-gray-200 dark:bg-gray-700"
+          }`}>
+            <Ionicons name="person" size={32} color={formData.role === "user" ? "white" : "#9CA3AF"} />
+          </View>
+          <View className="flex-1 ml-4">
+            <Text className="text-xl font-bold text-gray-800 dark:text-white mb-1">
+              User Account
+            </Text>
+            <Text className="text-gray-600 dark:text-gray-400 text-sm">
+              For general users
+            </Text>
+          </View>
+          {formData.role === "user" && (
+            <Ionicons name="checkmark-circle" size={28} color="#3B82F6" />
+          )}
         </View>
-        <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Password strength: {strength.text}
-        </Text>
-      </View>
-    );
-  };
+        <View className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3">
+          <Text className="text-gray-700 dark:text-gray-300 text-sm mb-2">
+            ✓ View notifications and notices
+          </Text>
+          <Text className="text-gray-700 dark:text-gray-300 text-sm mb-2">
+            ✓ Browse and apply for jobs
+          </Text>
+          <Text className="text-gray-700 dark:text-gray-300 text-sm">
+            ✓ Download forms and documents
+          </Text>
+        </View>
+      </TouchableOpacity>
 
-  const renderRoleSpecificFields = () => {
-    switch (selectedRole) {
-      case 'patient':
-        return (
-          <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 shadow-lg border border-gray-200 dark:border-gray-700">
-            <View className="flex-row items-center mb-4">
-              <Ionicons name="medical" size={24} color="#3B82F6" style={{ marginRight: 8 }} />
-              <Text className={`${isSmallScreen ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-white`}>
-                Patient Information
-              </Text>
-            </View>
-            
-            <View className={screenWidth > 360 ? "flex-row space-x-4 mb-4" : "mb-4"}>
-              <View className={screenWidth > 360 ? "flex-1" : "mb-4"}>
-                <CustomTextInput
-                  label="Date of Birth"
-                  placeholder="MM/DD/YYYY"
-                  value={formData.dateOfBirth}
-                  onChangeText={(text) => handleInputChange('dateOfBirth', text)}
-                  required={true}
-                  icon="calendar-outline"
-                  fieldName="dateOfBirth"
-                />
-              </View>
-              
-              <View className={screenWidth > 360 ? "flex-1" : ""}>
-                <GenderSelector />
-              </View>
-            </View>
-
-            <CustomTextInput
-              label="Emergency Contact"
-              placeholder="Emergency contact number"
-              value={formData.emergencyContact}
-              onChangeText={(text) => handleInputChange('emergencyContact', text)}
-              keyboardType="phone-pad"
-              icon="call-outline"
-              fieldName="emergencyContact"
-            />
-
-            <CustomTextInput
-              label="Medical History"
-              placeholder="Brief medical history (optional)"
-              value={formData.medicalHistory}
-              onChangeText={(text) => handleInputChange('medicalHistory', text)}
-              multiline={true}
-              numberOfLines={3}
-              icon="document-text-outline"
-              fieldName="medicalHistory"
-            />
+      {/* Admin Role Card */}
+      <TouchableOpacity
+        onPress={() => updateField("role", "admin")}
+        className={`rounded-2xl p-6 border-2 ${
+          formData.role === "admin"
+            ? "bg-purple-50 dark:bg-purple-900/20 border-purple-500"
+            : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+        }`}
+        activeOpacity={0.7}
+      >
+        <View className="flex-row items-center mb-3">
+          <View className={`w-16 h-16 rounded-2xl items-center justify-center ${
+            formData.role === "admin" ? "bg-purple-500" : "bg-gray-200 dark:bg-gray-700"
+          }`}>
+            <Ionicons name="shield-checkmark" size={32} color={formData.role === "admin" ? "white" : "#9CA3AF"} />
           </View>
-        );
-
-      case 'doctor':
-        return (
-          <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 shadow-lg border border-gray-200 dark:border-gray-700">
-            <View className="flex-row items-center mb-4">
-              <Ionicons name="school" size={24} color="#3B82F6" style={{ marginRight: 8 }} />
-              <Text className={`${isSmallScreen ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-white`}>
-                Professional Information
-              </Text>
-            </View>
-            
-            <CustomTextInput
-              label="Medical License Number"
-              placeholder="Enter license number"
-              value={formData.licenseNumber}
-              onChangeText={(text) => handleInputChange('licenseNumber', text)}
-              required={true}
-              icon="card-outline"
-              fieldName="licenseNumber"
-            />
-
-            <CustomTextInput
-              label="Specialization"
-              placeholder="Enter specialization"
-              value={formData.specialization}
-              onChangeText={(text) => handleInputChange('specialization', text)}
-              required={true}
-              icon="medical-outline"
-              fieldName="specialization"
-            />
-
-            <View className={screenWidth > 360 ? "flex-row space-x-4" : ""}>
-              <View className={screenWidth > 360 ? "flex-1" : ""}>
-                <CustomTextInput
-                  label="Hospital/Clinic"
-                  placeholder="Current workplace"
-                  value={formData.hospital}
-                  onChangeText={(text) => handleInputChange('hospital', text)}
-                  icon="business-outline"
-                  fieldName="hospital"
-                />
-              </View>
-              
-              <View className={screenWidth > 360 ? "flex-1" : ""}>
-                <CustomTextInput
-                  label="Experience (years)"
-                  placeholder="Years"
-                  value={formData.experience}
-                  onChangeText={(text) => handleInputChange('experience', text)}
-                  keyboardType="numeric"
-                  icon="time-outline"
-                  fieldName="experience"
-                />
-              </View>
-            </View>
-
-            <CustomTextInput
-              label="Qualifications"
-              placeholder="Degrees, certifications"
-              value={formData.qualifications}
-              onChangeText={(text) => handleInputChange('qualifications', text)}
-              multiline={true}
-              numberOfLines={2}
-              icon="ribbon-outline"
-              fieldName="qualifications"
-            />
-
-            <CustomTextInput
-              label="Consultation Fee ($)"
-              placeholder="Enter consultation fee"
-              value={formData.consultationFee}
-              onChangeText={(text) => handleInputChange('consultationFee', text)}
-              keyboardType="numeric"
-              icon="card-outline"
-              fieldName="consultationFee"
-            />
+          <View className="flex-1 ml-4">
+            <Text className="text-xl font-bold text-gray-800 dark:text-white mb-1">
+              Admin Account
+            </Text>
+            <Text className="text-gray-600 dark:text-gray-400 text-sm">
+              For administrators
+            </Text>
           </View>
-        );
+          {formData.role === "admin" && (
+            <Ionicons name="checkmark-circle" size={28} color="#8B5CF6" />
+          )}
+        </View>
+        <View className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 mb-3">
+          <Text className="text-gray-700 dark:text-gray-300 text-sm mb-2">
+            ✓ Manage notifications and notices
+          </Text>
+          <Text className="text-gray-700 dark:text-gray-300 text-sm mb-2">
+            ✓ Post and manage job listings
+          </Text>
+          <Text className="text-gray-700 dark:text-gray-300 text-sm">
+            ✓ Upload forms and documents
+          </Text>
+        </View>
+        <View className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-3 flex-row items-start">
+          <Ionicons name="information-circle" size={18} color="#F59E0B" />
+          <Text className="text-orange-600 dark:text-orange-400 text-xs ml-2 flex-1">
+            Requires admin code verification
+          </Text>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
 
-      case 'medical':
-        return (
-          <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 shadow-lg border border-gray-200 dark:border-gray-700">
-            <View className="flex-row items-center mb-4">
-              <Ionicons name="people" size={24} color="#3B82F6" style={{ marginRight: 8 }} />
-              <Text className={`${isSmallScreen ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-white`}>
-                Staff Information
-              </Text>
-            </View>
-            
-            <CustomTextInput
-              label="Staff ID"
-              placeholder="Enter staff ID"
-              value={formData.staffId}
-              onChangeText={(text) => handleInputChange('staffId', text)}
-              required={true}
-              icon="id-card-outline"
-              fieldName="staffId"
-            />
+  // Render Step 3: Additional Information
+  const renderStep3 = () => {
+    if (formData.role === "admin") {
+      return (
+        <View>
+          <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+            Admin Verification
+          </Text>
+          <Text className="text-gray-600 dark:text-gray-400 mb-6">
+            Complete your admin account setup
+          </Text>
 
-            <View className={screenWidth > 360 ? "flex-row space-x-4" : ""}>
-              <View className={screenWidth > 360 ? "flex-1" : ""}>
-                <CustomTextInput
-                  label="Department"
-                  placeholder="Enter department"
-                  value={formData.department}
-                  onChangeText={(text) => handleInputChange('department', text)}
-                  required={true}
-                  icon="business-outline"
-                  fieldName="department"
-                />
-              </View>
-              
-              <View className={screenWidth > 360 ? "flex-1" : ""}>
-                <CustomTextInput
-                  label="Position"
-                  placeholder="Job position"
-                  value={formData.position}
-                  onChangeText={(text) => handleInputChange('position', text)}
-                  required={true}
-                  icon="briefcase-outline"
-                  fieldName="position"
-                />
-              </View>
+          {/* Admin Code */}
+          <View className="mb-4">
+            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+              Admin Code *
+            </Text>
+            <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.adminCode ? 'border-2 border-red-500' : ''}`}>
+              <Ionicons name="key-outline" size={20} color="#9CA3AF" />
+              <TextInput
+                placeholder="Enter admin verification code"
+                value={formData.adminCode}
+                onChangeText={(text) => updateField("adminCode", text)}
+                secureTextEntry
+                className="flex-1 p-4 text-gray-800 dark:text-white"
+                placeholderTextColor="#9CA3AF"
+              />
             </View>
+            {errors.adminCode && (
+              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.adminCode}</Text>
+            )}
+            <Text className="text-gray-500 dark:text-gray-400 text-xs mt-1 ml-1">
+              Contact your organization for the admin code
+            </Text>
           </View>
-        );
 
-      default:
-        return null;
+          {/* Department */}
+          <View className="mb-4">
+            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+              Department *
+            </Text>
+            <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.department ? 'border-2 border-red-500' : ''}`}>
+              <Ionicons name="business-outline" size={20} color="#9CA3AF" />
+              <TextInput
+                placeholder="Your department"
+                value={formData.department}
+                onChangeText={(text) => updateField("department", text)}
+                className="flex-1 p-4 text-gray-800 dark:text-white"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+            {errors.department && (
+              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.department}</Text>
+            )}
+          </View>
+
+          {/* Employee ID */}
+          <View className="mb-6">
+            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+              Employee ID *
+            </Text>
+            <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.employeeId ? 'border-2 border-red-500' : ''}`}>
+              <Ionicons name="card-outline" size={20} color="#9CA3AF" />
+              <TextInput
+                placeholder="Your employee ID"
+                value={formData.employeeId}
+                onChangeText={(text) => updateField("employeeId", text)}
+                className="flex-1 p-4 text-gray-800 dark:text-white"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+            {errors.employeeId && (
+              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.employeeId}</Text>
+            )}
+          </View>
+        </View>
+      );
+    } else {
+      return (
+        <View>
+          <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+            Additional Details
+          </Text>
+          <Text className="text-gray-600 dark:text-gray-400 mb-6">
+            Tell us a bit more about yourself
+          </Text>
+
+          {/* Address */}
+          <View className="mb-4">
+            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+              Address *
+            </Text>
+            <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-start px-4 ${errors.address ? 'border-2 border-red-500' : ''}`}>
+              <Ionicons name="location-outline" size={20} color="#9CA3AF" className="mt-4" />
+              <TextInput
+                placeholder="Enter your address"
+                value={formData.address}
+                onChangeText={(text) => updateField("address", text)}
+                multiline
+                numberOfLines={3}
+                className="flex-1 p-4 text-gray-800 dark:text-white"
+                placeholderTextColor="#9CA3AF"
+                style={{ textAlignVertical: 'top' }}
+              />
+            </View>
+            {errors.address && (
+              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.address}</Text>
+            )}
+          </View>
+
+          {/* Date of Birth */}
+          <View className="mb-4">
+            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+              Date of Birth *
+            </Text>
+            <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.dateOfBirth ? 'border-2 border-red-500' : ''}`}>
+              <Ionicons name="calendar-outline" size={20} color="#9CA3AF" />
+              <TextInput
+                placeholder="DD/MM/YYYY"
+                value={formData.dateOfBirth}
+                onChangeText={(text) => updateField("dateOfBirth", text)}
+                className="flex-1 p-4 text-gray-800 dark:text-white"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+            {errors.dateOfBirth && (
+              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.dateOfBirth}</Text>
+            )}
+          </View>
+
+          {/* Gender */}
+          <View className="mb-6">
+            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+              Gender *
+            </Text>
+            <View className="flex-row">
+              {["Male", "Female", "Other"].map((gender) => (
+                <TouchableOpacity
+                  key={gender}
+                  onPress={() => updateField("gender", gender)}
+                  className={`flex-1 mr-2 p-4 rounded-xl ${
+                    formData.gender === gender
+                      ? "bg-blue-500"
+                      : "bg-gray-100 dark:bg-gray-700"
+                  }`}
+                >
+                  <Text
+                    className={`text-center font-semibold ${
+                      formData.gender === gender
+                        ? "text-white"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
+                  >
+                    {gender}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {errors.gender && (
+              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.gender}</Text>
+            )}
+          </View>
+        </View>
+      );
     }
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-gray-50 dark:bg-gray-900"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar 
-        barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'} 
-        backgroundColor="#F9FAFB" 
-      />
-      <ScrollView 
-        className={`flex-1 ${isSmallScreen ? 'px-3 py-4' : isMediumScreen ? 'px-4 py-5' : 'px-5 py-6'}`}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
+      <ScrollView className="flex-1">
         {/* Header */}
-        <View className={`${isSmallScreen ? 'mb-6' : 'mb-8'} mt-4`}>
-          <View className="items-center mb-4">
-            <LinearGradient
-              colors={['#3B82F6', '#1D4ED8']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="rounded-full p-4 mb-4"
-              style={{
-                borderRadius: 24,
-                shadowColor: '#3B82F6',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 8,
-              }}
-            >
-              <Ionicons name="person-add" size={32} color="white" />
-            </LinearGradient>
-          </View>
-          <Text className={`${isSmallScreen ? 'text-2xl' : 'text-3xl'} font-bold text-gray-800 dark:text-white text-center mb-2`}>
-            Create Account
-          </Text>
-          <Text className={`${isSmallScreen ? 'text-sm' : 'text-base'} text-gray-600 dark:text-gray-300 text-center`}>
-            Join our healthcare platform today
-          </Text>
-        </View>
+        <View className="bg-white dark:bg-gray-800 px-6 pt-12 pb-6 shadow-sm">
+          <TouchableOpacity
+            onPress={() => step === 1 ? navigation.goBack() : handleBack()}
+            className="mb-4"
+          >
+            <Ionicons name="arrow-back" size={24} color="#6B7280" />
+          </TouchableOpacity>
 
-        {/* Progress Indicator */}
-        <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 shadow-lg border border-gray-200 dark:border-gray-700">
-          <View className="flex-row justify-between items-center mb-2">
-            <Text className="text-sm text-gray-600 dark:text-gray-400">Registration Progress</Text>
-            <Text className="text-sm text-blue-600 dark:text-blue-400 font-medium">Step 1 of 1</Text>
-          </View>
-          <View className="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <View className="bg-blue-600 h-2 rounded-full w-full" />
-          </View>
-        </View>
-
-        {/* Role Selection */}
-        <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 shadow-lg border border-gray-200 dark:border-gray-700">
-          <Text className={`${isSmallScreen ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-white mb-4`}>
-            Register as
-          </Text>
-          <View className={screenWidth < 360 ? "space-y-2" : "flex-row space-x-2"}>
-            {roles.map((role) => (
-              <TouchableOpacity
-                key={role.key}
-                className={`${screenWidth < 360 ? 'w-full mb-2' : 'flex-1'} flex-row items-center justify-center py-3 px-4 rounded-xl border-2 ${
-                  selectedRole === role.key
-                    ? 'bg-blue-100 dark:bg-blue-900 border-blue-500'
-                    : 'bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600'
+          {/* Progress Indicator */}
+          <View className="flex-row mb-4">
+            {[1, 2, 3].map((s) => (
+              <View
+                key={s}
+                className={`h-2 flex-1 rounded-full mr-2 ${
+                  s <= step ? "bg-blue-500" : "bg-gray-200 dark:bg-gray-700"
                 }`}
-                onPress={() => handleRoleChange(role.key)}
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name={role.icon}
-                  size={isSmallScreen ? 18 : 20}
-                  color={selectedRole === role.key ? '#3B82F6' : '#9CA3AF'}
-                  style={{ marginRight: 8 }}
-                />
-                <Text
-                  className={`font-medium ${isSmallScreen ? 'text-sm' : 'text-base'} ${
-                    selectedRole === role.key
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  {role.label}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
           </View>
-        </View>
-
-        {/* Personal Information Section */}
-        <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 shadow-lg border border-gray-200 dark:border-gray-700">
-          <View className="flex-row items-center mb-4">
-            <Ionicons name="person" size={24} color="#3B82F6" style={{ marginRight: 8 }} />
-            <Text className={`${isSmallScreen ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-white`}>
-              Personal Information
-            </Text>
-          </View>
-          
-          <View className={screenWidth > 360 ? "flex-row space-x-4" : ""}>
-            <View className={screenWidth > 360 ? "flex-1" : ""}>
-              <CustomTextInput
-                label="First Name"
-                placeholder="Enter first name"
-                value={formData.firstName}
-                onChangeText={(text) => handleInputChange('firstName', text)}
-                required={true}
-                autoCapitalize="words"
-                fieldName="firstName"
-              />
-            </View>
-            
-            <View className={screenWidth > 360 ? "flex-1" : ""}>
-              <CustomTextInput
-                label="Last Name"
-                placeholder="Enter last name"
-                value={formData.lastName}
-                onChangeText={(text) => handleInputChange('lastName', text)}
-                required={true}
-                autoCapitalize="words"
-                fieldName="lastName"
-              />
-            </View>
-          </View>
-
-          <CustomTextInput
-            label="Email Address"
-            placeholder="Enter email address"
-            value={formData.email}
-            onChangeText={(text) => handleInputChange('email', text)}
-            required={true}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            icon="mail-outline"
-            fieldName="email"
-          />
-
-          <CustomTextInput
-            label="Phone Number"
-            placeholder="Enter phone number"
-            value={formData.phone}
-            onChangeText={(text) => handleInputChange('phone', text)}
-            required={true}
-            keyboardType="phone-pad"
-            icon="call-outline"
-            fieldName="phone"
-          />
-        </View>
-
-        {/* Security Section */}
-        <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 shadow-lg border border-gray-200 dark:border-gray-700">
-          <View className="flex-row items-center mb-4">
-            <Ionicons name="lock-closed" size={24} color="#3B82F6" style={{ marginRight: 8 }} />
-            <Text className={`${isSmallScreen ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-white`}>
-              Security Information
-            </Text>
-          </View>
-          
-          <CustomTextInput
-            label="Password"
-            placeholder="Enter password (min 6 characters)"
-            value={formData.password}
-            onChangeText={(text) => handleInputChange('password', text)}
-            required={true}
-            secureTextEntry={!showPassword}
-            autoCapitalize="none"
-            fieldName="password"
-            rightElement={
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color="#9CA3AF"
-                />
-              </TouchableOpacity>
-            }
-          />
-
-          <CustomTextInput
-            label="Confirm Password"
-            placeholder="Confirm password"
-            value={formData.confirmPassword}
-            onChangeText={(text) => handleInputChange('confirmPassword', text)}
-            required={true}
-            secureTextEntry={!showConfirmPassword}
-            autoCapitalize="none"
-            fieldName="confirmPassword"
-            rightElement={
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color="#9CA3AF"
-                />
-              </TouchableOpacity>
-            }
-          />
-          
-          {/* Password Strength Indicator */}
-          <PasswordStrengthIndicator password={formData.password} />
-        </View>
-
-        {/* Role-Specific Fields */}
-        {renderRoleSpecificFields()}
-
-        {/* Address Information Section */}
-        <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-6 shadow-lg border border-gray-200 dark:border-gray-700">
-          <View className="flex-row items-center mb-4">
-            <Ionicons name="location" size={24} color="#3B82F6" style={{ marginRight: 8 }} />
-            <Text className={`${isSmallScreen ? 'text-base' : 'text-lg'} font-semibold text-gray-800 dark:text-white`}>
-              Address Information
-            </Text>
-          </View>
-          
-          <CustomTextInput
-            label="Address"
-            placeholder="Enter full address"
-            value={formData.address}
-            onChangeText={(text) => handleInputChange('address', text)}
-            multiline={true}
-            numberOfLines={2}
-            icon="home-outline"
-            fieldName="address"
-          />
-
-          <View className={screenWidth > 360 ? "flex-row space-x-4" : ""}>
-            <View className={screenWidth > 360 ? "flex-1" : ""}>
-              <CustomTextInput
-                label="City"
-                placeholder="Enter city"
-                value={formData.city}
-                onChangeText={(text) => handleInputChange('city', text)}
-                autoCapitalize="words"
-                fieldName="city"
-              />
-            </View>
-            
-            <View className={screenWidth > 360 ? "flex-1" : ""}>
-              <CustomTextInput
-                label="State"
-                placeholder="Enter state"
-                value={formData.state}
-                onChangeText={(text) => handleInputChange('state', text)}
-                autoCapitalize="words"
-                fieldName="state"
-              />
-            </View>
-          </View>
-
-          <CustomTextInput
-            label="ZIP Code"
-            placeholder="Enter ZIP code"
-            value={formData.zipCode}
-            onChangeText={(text) => handleInputChange('zipCode', text)}
-            keyboardType="numeric"
-            fieldName="zipCode"
-          />
-        </View>
-
-        {/* Submit Button */}
-        <TouchableOpacity
-          className="rounded-xl mb-6 active:scale-95"
-          onPress={handleSubmit}
-          activeOpacity={0.9}
-        >
-          <LinearGradient
-            colors={['#3B82F6', '#8B5CF6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            className="rounded-xl py-4"
-            style={{
-              borderRadius: 24,
-              shadowColor: '#3B82F6',
-              shadowOffset: {
-                width: 0,
-                height: 4,
-              },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 8,
-            }}
-          >
-            <View className="flex-row items-center justify-center">
-              <Ionicons 
-                name="checkmark-circle-outline" 
-                size={24} 
-                color="white" 
-                style={{ marginRight: 8 }} 
-              />
-              <Text className={`text-white text-center ${isSmallScreen ? 'text-base' : 'text-lg'} font-semibold`}>
-                Register as {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}
-              </Text>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        {/* Login Link */}
-        <View className="flex-row justify-center items-center mb-8">
-          <Text className={`${isSmallScreen ? 'text-sm' : 'text-base'} text-gray-600 dark:text-gray-400`}>
-            Already have an account?{' '}
-          </Text>
-          <TouchableOpacity 
-            activeOpacity={0.7}
-            onPress={() => {
-              // Navigate to login screen
-              console.log('Navigate to Sign In');
-            }}
-          >
-            <Text className={`${isSmallScreen ? 'text-sm' : 'text-base'} text-blue-600 dark:text-blue-400 font-semibold`}>
-              Sign In
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Terms and Privacy */}
-        <View className="items-center mb-6">
-          <Text className={`${isSmallScreen ? 'text-xs' : 'text-sm'} text-gray-500 dark:text-gray-400 text-center px-4`}>
-            By registering, you agree to our{' '}
-            <TouchableOpacity 
-              activeOpacity={0.7}
-              onPress={() => console.log('Open Terms of Service')}
-            >
-              <Text className="text-blue-600 dark:text-blue-400">Terms of Service</Text>
-            </TouchableOpacity>
-            {' '}and{' '}
-            <TouchableOpacity 
-              activeOpacity={0.7}
-              onPress={() => console.log('Open Privacy Policy')}
-            >
-              <Text className="text-blue-600 dark:text-blue-400">Privacy Policy</Text>
-            </TouchableOpacity>
+          <Text className="text-gray-600 dark:text-gray-400">
+            Step {step} of 3
           </Text>
         </View>
 
-        {/* Help Section */}
-        <View className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 mb-4 border border-blue-200 dark:border-blue-800">
-          <View className="flex-row items-center mb-2">
-            <Ionicons name="help-circle-outline" size={20} color="#3B82F6" style={{ marginRight: 8 }} />
-            <Text className={`${isSmallScreen ? 'text-sm' : 'text-base'} font-medium text-blue-800 dark:text-blue-200`}>
-              Need Help?
-            </Text>
-          </View>
-          <Text className={`${isSmallScreen ? 'text-xs' : 'text-sm'} text-blue-700 dark:text-blue-300`}>
-            Having trouble with registration? Contact our support team at support@healthcare.com or call 1-800-HEALTH.
-          </Text>
+        {/* Form Content */}
+        <View className="p-6">
+          {step === 1 && renderStep1()}
+          {step === 2 && renderStep2()}
+          {step === 3 && renderStep3()}
         </View>
       </ScrollView>
+
+      {/* Bottom Action Buttons */}
+      <View className="bg-white dark:bg-gray-800 p-6 shadow-lg">
+        {step < 3 ? (
+          <TouchableOpacity
+            onPress={handleNext}
+            className="bg-blue-500 rounded-xl py-4 items-center"
+          >
+            <Text className="text-white font-bold text-lg">Continue</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={handleRegister}
+            disabled={loading}
+            className="bg-blue-500 rounded-xl py-4 items-center"
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text className="text-white font-bold text-lg">Create Account</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Login")}
+          className="mt-4"
+        >
+          <Text className="text-gray-600 dark:text-gray-400 text-center">
+            Already have an account?{" "}
+            <Text className="text-blue-500 font-semibold">Login</Text>
+          </Text>
+        </TouchableOpacity>
+      </View>
     </KeyboardAvoidingView>
   );
-};
-
-export default RegistrationPage;
+}

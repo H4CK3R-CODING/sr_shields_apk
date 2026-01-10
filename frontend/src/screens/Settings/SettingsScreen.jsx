@@ -1,4 +1,4 @@
-// src/screens/SettingsScreen.js
+// src/screens/Settings/SettingsScreen.jsx
 import React, { useState } from "react";
 import {
   View,
@@ -7,291 +7,620 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
-  StatusBar,
+  Linking,
+  Modal,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import NavLayout from "@/src/components/Navbar/NavLayout";
-// import { useTheme } from '../context/ThemeContext';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import useAuthStore from "../../state/authStore";
+import useContentStore from "../../state/contentStore";
+import CustomHeader from "../../components/CustomHeader";
 
-const SettingsScreen = ({ navigation }) => {
-  // const { toggleTheme } = useTheme();
-  const [notifications, setNotifications] = useState(true);
-  const [orderUpdates, setOrderUpdates] = useState(true);
-  const [promotions, setPromotions] = useState(false);
-  const [biometricAuth, setBiometricAuth] = useState(false);
-  const [autoReorder, setAutoReorder] = useState(true);
-  const [location, setLocation] = useState(true);
-  // const [isDarkMode, setIsDarkMode] = useState(false);
+export default function SettingsScreen({ navigation }) {
+  const { user, role } = useAuthStore();
+  const { clearAllData } = useContentStore();
 
-  // const handleThemeToggle = () => {
-  //   setIsDarkMode(!isDarkMode);
-  //   toggleTheme();
-  // };
+  // Settings State
+  const [settings, setSettings] = useState({
+    // Notifications
+    pushNotifications: true,
+    emailNotifications: true,
+    notificationSound: true,
+    vibration: true,
+    
+    // Appearance
+    darkMode: false,
+    fontSize: "medium", // small, medium, large
+    language: "en", // en, hi, etc.
+    
+    // Privacy
+    showOnlineStatus: true,
+    readReceipts: true,
+    
+    // Data & Storage
+    autoDownload: true,
+    downloadOverWifi: true,
+    cacheSize: "150 MB",
+  });
 
-  const settingsData = [
+  const [feedbackModal, setFeedbackModal] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [aboutModal, setAboutModal] = useState(false);
+
+  // Toggle setting
+  const toggleSetting = async (key) => {
+    const newSettings = { ...settings, [key]: !settings[key] };
+    setSettings(newSettings);
+    
+    // Save to AsyncStorage
+    await AsyncStorage.setItem("appSettings", JSON.stringify(newSettings));
+    
+    // Show feedback for certain settings
+    if (key === "darkMode") {
+      Alert.alert(
+        "Dark Mode",
+        `Dark mode ${!settings[key] ? "enabled" : "disabled"}`,
+        [{ text: "OK" }]
+      );
+    }
+  };
+
+  // Change font size
+  const changeFontSize = (size) => {
+    setSettings({ ...settings, fontSize: size });
+    AsyncStorage.setItem("appSettings", JSON.stringify({ ...settings, fontSize: size }));
+  };
+
+  // Clear cache
+  const handleClearCache = () => {
+    Alert.alert(
+      "Clear Cache",
+      "This will clear all cached data and free up storage. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Clear cached data
+              await AsyncStorage.removeItem("cachedNotices");
+              await AsyncStorage.removeItem("cachedJobs");
+              
+              setSettings({ ...settings, cacheSize: "0 MB" });
+              Alert.alert("Success", "Cache cleared successfully");
+            } catch (error) {
+              Alert.alert("Error", "Failed to clear cache");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Clear all data
+  const handleClearAllData = () => {
+    Alert.alert(
+      "Clear All Data",
+      "⚠️ This will delete ALL your data including notices, jobs, and forms. This action cannot be undone!",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete All",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearAllData();
+              Alert.alert("Success", "All data cleared successfully");
+            } catch (error) {
+              Alert.alert("Error", "Failed to clear data");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Submit feedback
+  const handleSubmitFeedback = async () => {
+    if (!feedbackText.trim()) {
+      Alert.alert("Error", "Please enter your feedback");
+      return;
+    }
+
+    try {
+      // In production: Send to backend API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setFeedbackModal(false);
+      setFeedbackText("");
+      Alert.alert("Thank You!", "Your feedback has been submitted successfully");
+    } catch (error) {
+      Alert.alert("Error", "Failed to submit feedback");
+    }
+  };
+
+  // Contact support
+  const handleContactSupport = () => {
+    Alert.alert(
+      "Contact Support",
+      "Choose a method to contact us",
+      [
+        {
+          text: "Email",
+          onPress: () => Linking.openURL("mailto:support@csc.edu"),
+        },
+        {
+          text: "Phone",
+          onPress: () => Linking.openURL("tel:+1234567890"),
+        },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
+  };
+
+  // Settings sections
+  const settingsSections = [
     {
-      title: "Account",
-      data: [
+      title: "Notifications",
+      icon: "notifications",
+      items: [
         {
-          id: "profile",
-          title: "Profile Information",
-          subtitle: "Update your personal details",
-          icon: "person-outline",
-          onPress: () => navigation.navigate("Profile"),
-          showArrow: true,
-        },
-        {
-          id: "addresses",
-          title: "Saved Addresses",
-          subtitle: "Manage delivery addresses",
-          icon: "location-outline",
-          onPress: () => console.log("Manage addresses"),
-          showArrow: true,
-        },
-        {
-          id: "payment",
-          title: "Payment Methods",
-          subtitle: "Cards, wallets & bank accounts",
-          icon: "card-outline",
-          onPress: () => console.log("Payment methods"),
-          showArrow: true,
-        },
-      ],
-    },
-    {
-      title: "Preferences",
-      data: [
-        // {
-        //   id: 'theme',
-        //   title: 'Dark Mode',
-        //   subtitle: 'Switch between light and dark theme',
-        //   icon: isDarkMode ? 'moon' : 'sunny',
-        //   type: 'switch',
-        //   value: isDarkMode,
-        //   onToggle: handleThemeToggle
-        // },
-        {
-          id: "notifications",
-          title: "Push Notifications",
-          subtitle: "Receive app notifications",
+          label: "Push Notifications",
+          key: "pushNotifications",
+          type: "toggle",
           icon: "notifications-outline",
-          type: "switch",
-          value: notifications,
-          onToggle: setNotifications,
+          description: "Receive push notifications for updates",
         },
         {
-          id: "orderUpdates",
-          title: "Order Updates",
-          subtitle: "Get notified about order status",
-          icon: "receipt-outline",
-          type: "switch",
-          value: orderUpdates,
-          onToggle: setOrderUpdates,
+          label: "Email Notifications",
+          key: "emailNotifications",
+          type: "toggle",
+          icon: "mail-outline",
+          description: "Get notified via email",
         },
         {
-          id: "promotions",
-          title: "Promotions & Offers",
-          subtitle: "Receive promotional notifications",
-          icon: "gift-outline",
-          type: "switch",
-          value: promotions,
-          onToggle: setPromotions,
-        },
-      ],
-    },
-    {
-      title: "Security",
-      data: [
-        {
-          id: "biometric",
-          title: "Biometric Authentication",
-          subtitle: "Use fingerprint or face ID",
-          icon: "finger-print",
-          type: "switch",
-          value: biometricAuth,
-          onToggle: setBiometricAuth,
+          label: "Notification Sound",
+          key: "notificationSound",
+          type: "toggle",
+          icon: "volume-high-outline",
+          description: "Play sound for notifications",
         },
         {
-          id: "privacy",
-          title: "Privacy Settings",
-          subtitle: "Control your data sharing",
-          icon: "shield-outline",
-          onPress: () => console.log("Privacy settings"),
-          showArrow: true,
-        },
-        {
-          id: "changePassword",
-          title: "Change Password",
-          subtitle: "Update your account password",
-          icon: "lock-closed-outline",
-          onPress: () => console.log("Change password"),
-          showArrow: true,
+          label: "Vibration",
+          key: "vibration",
+          type: "toggle",
+          icon: "phone-portrait-outline",
+          description: "Vibrate on notifications",
         },
       ],
     },
     {
-      title: "App Preferences",
-      data: [
+      title: "Appearance",
+      icon: "color-palette",
+      items: [
         {
-          id: "location",
-          title: "Location Services",
-          subtitle: "Find nearby pharmacies",
-          icon: "location",
-          type: "switch",
-          value: location,
-          onToggle: setLocation,
+          label: "Dark Mode",
+          key: "darkMode",
+          type: "toggle",
+          icon: "moon-outline",
+          description: "Use dark theme",
         },
         {
-          id: "autoReorder",
-          title: "Auto Reorder",
-          subtitle: "Automatically reorder medicines",
-          icon: "repeat-outline",
-          type: "switch",
-          value: autoReorder,
-          onToggle: setAutoReorder,
+          label: "Font Size",
+          key: "fontSize",
+          type: "select",
+          icon: "text-outline",
+          description: "Adjust text size",
         },
         {
-          id: "language",
-          title: "Language",
-          subtitle: "English",
+          label: "Language",
+          key: "language",
+          type: "navigation",
           icon: "language-outline",
-          onPress: () => console.log("Language settings"),
-          showArrow: true,
+          description: "English",
         },
       ],
     },
     {
-      title: "Support & Legal",
-      data: [
+      title: "Privacy & Security",
+      icon: "shield-checkmark",
+      items: [
         {
-          id: "help",
-          title: "Help Center",
-          subtitle: "FAQs and support articles",
-          icon: "help-circle-outline",
-          onPress: () => console.log("Help center"),
-          showArrow: true,
+          label: "Show Online Status",
+          key: "showOnlineStatus",
+          type: "toggle",
+          icon: "radio-button-on-outline",
+          description: "Let others see when you're online",
         },
         {
-          id: "contact",
-          title: "Contact Support",
-          subtitle: "Get help from our team",
+          label: "Read Receipts",
+          key: "readReceipts",
+          type: "toggle",
+          icon: "checkmark-done-outline",
+          description: "Send read receipts",
+        },
+        {
+          label: "Change Password",
+          key: "changePassword",
+          type: "navigation",
+          icon: "lock-closed-outline",
+          description: "Update your password",
+          onPress: () => navigation.navigate("Profile"),
+        },
+      ],
+    },
+    {
+      title: "Data & Storage",
+      icon: "server",
+      items: [
+        {
+          label: "Auto Download",
+          key: "autoDownload",
+          type: "toggle",
+          icon: "download-outline",
+          description: "Auto download attachments",
+        },
+        {
+          label: "Download Over WiFi Only",
+          key: "downloadOverWifi",
+          type: "toggle",
+          icon: "wifi-outline",
+          description: "Save mobile data",
+        },
+        {
+          label: "Cache Size",
+          key: "cacheSize",
+          type: "info",
+          icon: "albums-outline",
+          description: settings.cacheSize,
+          onPress: handleClearCache,
+        },
+        {
+          label: "Clear All Data",
+          key: "clearData",
+          type: "danger",
+          icon: "trash-outline",
+          description: "Delete all app data",
+          onPress: handleClearAllData,
+        },
+      ],
+    },
+    {
+      title: "Support & About",
+      icon: "help-circle",
+      items: [
+        {
+          label: "Help Center",
+          key: "help",
+          type: "navigation",
+          icon: "help-buoy-outline",
+          description: "Get help and support",
+          onPress: () => navigation.navigate("Help"),
+        },
+        {
+          label: "Send Feedback",
+          key: "feedback",
+          type: "navigation",
           icon: "chatbubble-outline",
-          onPress: () => console.log("Contact support"),
-          showArrow: true,
+          description: "Share your thoughts",
+          onPress: () => setFeedbackModal(true),
         },
         {
-          id: "terms",
-          title: "Terms & Conditions",
-          subtitle: "App usage terms",
-          icon: "document-text-outline",
-          onPress: () => console.log("Terms & Conditions"),
-          showArrow: true,
+          label: "Contact Support",
+          key: "contact",
+          type: "navigation",
+          icon: "mail-outline",
+          description: "Email or call us",
+          onPress: handleContactSupport,
         },
         {
-          id: "privacy-policy",
-          title: "Privacy Policy",
-          subtitle: "How we handle your data",
-          icon: "shield-checkmark-outline",
-          onPress: () => console.log("Privacy Policy"),
-          showArrow: true,
+          label: "Rate App",
+          key: "rate",
+          type: "navigation",
+          icon: "star-outline",
+          description: "Rate us on app store",
+          onPress: () => Alert.alert("Rate App", "Thank you for your support!"),
+        },
+        {
+          label: "About CSC",
+          key: "about",
+          type: "navigation",
+          icon: "information-circle-outline",
+          description: "Version 1.0.0",
+          onPress: () => setAboutModal(true),
         },
       ],
     },
   ];
 
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: () => {
-          // Handle logout logic here
-          console.log("User logged out");
-          // navigation.navigate('Login');
-        },
-      },
-    ]);
+  // Render setting item
+  const renderSettingItem = (item) => {
+    switch (item.type) {
+      case "toggle":
+        return (
+          <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="bg-blue-100 dark:bg-blue-900/30 w-10 h-10 rounded-lg items-center justify-center">
+                  <Ionicons name={item.icon} size={20} color="#3B82F6" />
+                </View>
+                <View className="flex-1 ml-3">
+                  <Text className="text-gray-800 dark:text-white font-semibold">
+                    {item.label}
+                  </Text>
+                  <Text className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">
+                    {item.description}
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={settings[item.key]}
+                onValueChange={() => toggleSetting(item.key)}
+                trackColor={{ false: "#D1D5DB", true: "#93C5FD" }}
+                thumbColor={settings[item.key] ? "#3B82F6" : "#F3F4F6"}
+              />
+            </View>
+          </View>
+        );
+
+      case "select":
+        if (item.key === "fontSize") {
+          return (
+            <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm">
+              <View className="flex-row items-center mb-3">
+                <View className="bg-purple-100 dark:bg-purple-900/30 w-10 h-10 rounded-lg items-center justify-center">
+                  <Ionicons name={item.icon} size={20} color="#8B5CF6" />
+                </View>
+                <View className="flex-1 ml-3">
+                  <Text className="text-gray-800 dark:text-white font-semibold">
+                    {item.label}
+                  </Text>
+                  <Text className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">
+                    {item.description}
+                  </Text>
+                </View>
+              </View>
+              <View className="flex-row">
+                {["small", "medium", "large"].map((size) => (
+                  <TouchableOpacity
+                    key={size}
+                    onPress={() => changeFontSize(size)}
+                    className={`flex-1 mr-2 py-2 rounded-lg ${
+                      settings.fontSize === size
+                        ? "bg-blue-500"
+                        : "bg-gray-100 dark:bg-gray-700"
+                    }`}
+                  >
+                    <Text
+                      className={`text-center font-semibold capitalize ${
+                        settings.fontSize === size
+                          ? "text-white"
+                          : "text-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      {size}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          );
+        }
+        break;
+
+      case "info":
+        return (
+          <TouchableOpacity
+            onPress={item.onPress}
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="bg-orange-100 dark:bg-orange-900/30 w-10 h-10 rounded-lg items-center justify-center">
+                  <Ionicons name={item.icon} size={20} color="#F59E0B" />
+                </View>
+                <View className="flex-1 ml-3">
+                  <Text className="text-gray-800 dark:text-white font-semibold">
+                    {item.label}
+                  </Text>
+                  <Text className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">
+                    {item.description}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={item.onPress}
+                className="bg-orange-500 px-3 py-1.5 rounded-lg"
+              >
+                <Text className="text-white text-xs font-semibold">Clear</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        );
+
+      case "danger":
+        return (
+          <TouchableOpacity
+            onPress={item.onPress}
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="bg-red-100 dark:bg-red-900/30 w-10 h-10 rounded-lg items-center justify-center">
+                  <Ionicons name={item.icon} size={20} color="#EF4444" />
+                </View>
+                <View className="flex-1 ml-3">
+                  <Text className="text-red-600 dark:text-red-400 font-semibold">
+                    {item.label}
+                  </Text>
+                  <Text className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">
+                    {item.description}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#EF4444" />
+            </View>
+          </TouchableOpacity>
+        );
+
+      case "navigation":
+      default:
+        return (
+          <TouchableOpacity
+            onPress={item.onPress}
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="bg-green-100 dark:bg-green-900/30 w-10 h-10 rounded-lg items-center justify-center">
+                  <Ionicons name={item.icon} size={20} color="#10B981" />
+                </View>
+                <View className="flex-1 ml-3">
+                  <Text className="text-gray-800 dark:text-white font-semibold">
+                    {item.label}
+                  </Text>
+                  <Text className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">
+                    {item.description}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            </View>
+          </TouchableOpacity>
+        );
+    }
   };
 
-  const renderSettingItem = (item) => (
-    <TouchableOpacity
-      key={item.id}
-      className="flex-row items-center px-4 py-4 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700"
-      onPress={item.onPress}
-      disabled={item.type === "switch"}
-      activeOpacity={0.7}
-    >
-      <View className="w-10 h-10 rounded-full justify-center items-center mr-4 bg-gray-100 dark:bg-gray-700">
-        <Ionicons name={item.icon} size={20} color="#059669" />
-      </View>
-
-      <View className="flex-1">
-        <Text className="font-semibold text-gray-900 dark:text-white">
-          {item.title}
-        </Text>
-        <Text className="text-sm text-gray-600 dark:text-gray-400">
-          {item.subtitle}
-        </Text>
-      </View>
-
-      {item.type === "switch" ? (
-        <Switch
-          value={item.value}
-          onValueChange={item.onToggle}
-          trackColor={{
-            false: "#f3f4f6",
-            true: "#059669",
-          }}
-          thumbColor={item.value ? "#ffffff" : "#ffffff"}
-        />
-      ) : item.showArrow ? (
-        <Ionicons name="chevron-forward" size={20} color="#6b7280" />
-      ) : null}
-    </TouchableOpacity>
-  );
-
-  const renderSection = (section) => (
-    <View key={section.title} className="mb-6">
-      <Text className="text-sm font-semibold mb-3 px-4 text-gray-600 dark:text-gray-400">
-        {section.title.toUpperCase()}
-      </Text>
-      <View className="rounded-lg mx-4 overflow-hidden shadow-sm bg-white dark:bg-gray-800">
-        {section.data.map(renderSettingItem)}
-      </View>
-    </View>
-  );
-
   return (
-    <NavLayout title="Settings" showAiChat={false}>
-      <View className="flex-1 bg-gray-50 dark:bg-gray-900">
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="py-4">{settingsData.map(renderSection)}</View>
+    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+      <CustomHeader title="Settings" showBack showMenu />
 
-          {/* App Version */}
-          <View className="items-center py-4">
-            <Text className="text-sm text-gray-400 dark:text-gray-500">
-              MediCare v1.0.0
-            </Text>
-          </View>
-
-          {/* Logout Button */}
-          <View className="px-4 pb-6">
-            <TouchableOpacity
-              className="bg-red-600 dark:bg-red-500 py-4 rounded-lg flex-row justify-center items-center"
-              onPress={handleLogout}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="log-out-outline" size={20} color="white" />
-              <Text className="text-white text-lg font-semibold ml-2">
-                Logout
+      <ScrollView className="flex-1 px-4 py-4">
+        {/* User Info Card */}
+        <View className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 mb-6 shadow-lg">
+          <View className="flex-row items-center">
+            <View className="bg-white w-16 h-16 rounded-full items-center justify-center">
+              <Ionicons name="person" size={32} color="#3B82F6" />
+            </View>
+            <View className="flex-1 ml-4">
+              <Text className="text-white text-xl font-bold">
+                {user?.fullName || "User Name"}
               </Text>
+              <Text className="text-white/80 text-sm capitalize">
+                {role === "admin" ? "Administrator" : "User"}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
+              <Ionicons name="create-outline" size={24} color="white" />
             </TouchableOpacity>
           </View>
-        </ScrollView>
-      </View>
-    </NavLayout>
-  );
-};
+        </View>
 
-export default SettingsScreen;
+        {/* Settings Sections */}
+        {settingsSections.map((section, sectionIndex) => (
+          <View key={sectionIndex} className="mb-6">
+            <View className="flex-row items-center mb-3 px-2">
+              <Ionicons name={section.icon} size={20} color="#6B7280" />
+              <Text className="text-gray-700 dark:text-gray-300 font-bold text-base ml-2">
+                {section.title}
+              </Text>
+            </View>
+            {section.items.map((item, itemIndex) => (
+              <View key={itemIndex}>{renderSettingItem(item)}</View>
+            ))}
+          </View>
+        ))}
+
+        {/* Bottom Padding */}
+        <View className="h-6" />
+      </ScrollView>
+
+      {/* Feedback Modal */}
+      <Modal
+        visible={feedbackModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setFeedbackModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white dark:bg-gray-800 rounded-t-3xl p-6">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-xl font-bold text-gray-800 dark:text-white">
+                Send Feedback
+              </Text>
+              <TouchableOpacity onPress={() => setFeedbackModal(false)}>
+                <Ionicons name="close" size={24} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+
+            <Text className="text-gray-600 dark:text-gray-400 mb-4">
+              We'd love to hear your thoughts on how we can improve!
+            </Text>
+
+            <TextInput
+              value={feedbackText}
+              onChangeText={setFeedbackText}
+              placeholder="Enter your feedback here..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={6}
+              className="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 text-gray-800 dark:text-white mb-4"
+              style={{ textAlignVertical: "top" }}
+            />
+
+            <TouchableOpacity
+              onPress={handleSubmitFeedback}
+              className="bg-blue-500 rounded-xl py-4 items-center"
+            >
+              <Text className="text-white font-bold text-lg">Submit Feedback</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* About Modal */}
+      <Modal
+        visible={aboutModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setAboutModal(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50 px-6">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
+            <View className="items-center mb-6">
+              <View className="bg-blue-500 w-20 h-20 rounded-full items-center justify-center mb-4">
+                <Ionicons name="school" size={40} color="white" />
+              </View>
+              <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+                CSC Portal
+              </Text>
+              <Text className="text-gray-600 dark:text-gray-400">Version 1.0.0</Text>
+            </View>
+
+            <View className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-4">
+              <Text className="text-gray-700 dark:text-gray-300 text-center leading-6">
+                Your comprehensive platform for managing notices, jobs, forms, and
+                staying connected with your organization.
+              </Text>
+            </View>
+
+            <View className="mb-4">
+              <Text className="text-gray-600 dark:text-gray-400 text-sm text-center">
+                © 2026 CSC. All rights reserved.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setAboutModal(false)}
+              className="bg-blue-500 rounded-xl py-3 items-center"
+            >
+              <Text className="text-white font-semibold">Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}

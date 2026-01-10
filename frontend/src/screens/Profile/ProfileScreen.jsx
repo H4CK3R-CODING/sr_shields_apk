@@ -1,4 +1,4 @@
-// src/screens/ProfileScreen.js
+// src/screens/Profile/ProfileScreen.jsx
 import React, { useState } from "react";
 import {
   View,
@@ -6,386 +6,602 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Image,
   Alert,
-  StatusBar,
+  Modal,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import NavLayout from "@/src/components/Navbar/NavLayout";
+import useAuthStore from "../../state/authStore";
+import CustomHeader from "../../components/CustomHeader";
 
-const ProfileScreen = ({ navigation }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: "John Doe",
-    email: "john.doe@email.com",
-    phone: "+91 9876543210",
-    dateOfBirth: "15/03/1990",
-    gender: "Male",
-    bloodGroup: "O+",
-    address: "123, Medical Street, Health City, HC 12345",
-    emergencyContact: "+91 9876543211",
-    emergencyName: "Jane Doe",
-    allergies: "Penicillin, Dust",
-    chronicConditions: "Hypertension",
+export default function ProfileScreen({ navigation }) {
+  const { user, role, updateProfile, logout } = useAuthStore();
+  
+  const [editMode, setEditMode] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [changePasswordModal, setChangePasswordModal] = useState(false);
+  
+  // Form data
+  const [formData, setFormData] = useState({
+    fullName: user?.fullName || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    address: user?.address || "",
+    dateOfBirth: user?.dateOfBirth || "",
+    gender: user?.gender || "",
+    department: user?.department || "",
+    employeeId: user?.employeeId || "",
+    bio: user?.bio || "",
   });
 
-  const [tempData, setTempData] = useState({ ...profileData });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
-  const profileImage =
-    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400";
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
 
-  const statsData = [
+  // Handle save profile
+  const handleSaveProfile = async () => {
+    setLoading(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Update profile
+      await updateProfile(formData);
+
+      setEditMode(false);
+      Alert.alert("Success", "Profile updated successfully");
+    } catch (error) {
+      Alert.alert("Error", error.message || "Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    // Reset form data
+    setFormData({
+      fullName: user?.fullName || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+      address: user?.address || "",
+      dateOfBirth: user?.dateOfBirth || "",
+      gender: user?.gender || "",
+      department: user?.department || "",
+      employeeId: user?.employeeId || "",
+      bio: user?.bio || "",
+    });
+    setEditMode(false);
+  };
+
+  // Handle change password
+  const handleChangePassword = async () => {
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      Alert.alert("Error", "Please fill in all password fields");
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      Alert.alert("Error", "New passwords do not match");
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      Alert.alert("Error", "Password must be at least 8 characters");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      setChangePasswordModal(false);
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      Alert.alert("Success", "Password changed successfully");
+    } catch (error) {
+      Alert.alert("Error", "Failed to change password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            await logout();
+            navigation.navigate("Login");
+          },
+        },
+      ]
+    );
+  };
+
+  // Get initials for avatar
+  const getInitials = (name) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map(n => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Profile stats
+  const stats = [
     {
-      label: "Orders",
-      value: "24",
-      icon: "receipt-outline",
-      color: "#059669",
+      label: role === "admin" ? "Notices Posted" : "Notices Read",
+      value: role === "admin" ? "24" : "15",
+      icon: "newspaper",
+      color: "bg-blue-500",
     },
     {
-      label: "Saved",
-      value: "₹1,240",
-      icon: "wallet-outline",
-      color: "#3b82f6",
+      label: role === "admin" ? "Jobs Posted" : "Applications",
+      value: role === "admin" ? "12" : "3",
+      icon: "briefcase",
+      color: "bg-purple-500",
     },
     {
-      label: "Rewards",
-      value: "340",
-      icon: "star-outline",
-      color: "#f59e0b",
+      label: role === "admin" ? "Forms Uploaded" : "Downloads",
+      value: role === "admin" ? "8" : "7",
+      icon: "document-text",
+      color: "bg-orange-500",
     },
   ];
 
-  const handleSave = () => {
-    setProfileData({ ...tempData });
-    setIsEditing(false);
-    Alert.alert("Success", "Profile updated successfully!");
-  };
-
-  const handleCancel = () => {
-    setTempData({ ...profileData });
-    setIsEditing(false);
-  };
-
-  const handleImagePicker = () => {
-    Alert.alert("Change Profile Picture", "Choose an option", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Camera", onPress: () => console.log("Open Camera") },
-      { text: "Gallery", onPress: () => console.log("Open Gallery") },
-    ]);
-  };
-
-  const renderInputField = (
-    label,
-    key,
-    placeholder,
-    multiline = false,
-    keyboardType = "default"
-  ) => (
-    <View className="mb-4">
-      <Text className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-        {label}
-      </Text>
-      <TextInput
-        className="p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-        placeholder={placeholder}
-        placeholderTextColor="#9ca3af"
-        value={isEditing ? tempData[key] : profileData[key]}
-        onChangeText={(text) =>
-          isEditing && setTempData({ ...tempData, [key]: text })
-        }
-        editable={isEditing}
-        multiline={multiline}
-        numberOfLines={multiline ? 3 : 1}
-        keyboardType={keyboardType}
-      />
-    </View>
-  );
-
-  const renderStatCard = (stat) => (
-    <View
-      key={stat.label}
-      className="flex-1 mx-1 p-4 rounded-xl items-center bg-white dark:bg-gray-800 shadow-sm"
-    >
-      <View
-        className="w-12 h-12 rounded-full justify-center items-center mb-2"
-        style={{ backgroundColor: `${stat.color}20` }}
-      >
-        <Ionicons name={stat.icon} size={24} color={stat.color} />
-      </View>
-      <Text className="text-lg font-bold text-gray-900 dark:text-white">
-        {stat.value}
-      </Text>
-      <Text className="text-sm text-gray-600 dark:text-gray-400">
-        {stat.label}
-      </Text>
-    </View>
-  );
-
   return (
-    <NavLayout title="Profile" showAiChat={false}>
-      <View className="flex-1 bg-gray-50 dark:bg-gray-900">
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Profile Header */}
-          <View className="p-6 mx-4 rounded-xl items-center bg-white dark:bg-gray-800 shadow-sm">
-            <TouchableOpacity onPress={handleImagePicker} activeOpacity={0.8}>
-              <View className="relative">
-                <Image
-                  source={{ uri: profileImage }}
-                  className="w-24 h-24 rounded-full"
-                  resizeMode="cover"
-                />
-                <View className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-600 rounded-full justify-center items-center">
-                  <Ionicons name="camera" size={16} color="white" />
-                </View>
-              </View>
+    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+      <CustomHeader
+        title="Profile"
+        showBack
+        showMenu
+        rightButton={
+          !editMode && (
+            <TouchableOpacity onPress={() => setEditMode(true)}>
+              <Ionicons name="create-outline" size={24} color="#6B7280" />
             </TouchableOpacity>
+          )
+        }
+      />
 
-            <Text className="text-2xl font-bold mt-4 text-gray-900 dark:text-white">
-              {profileData.name}
+      <ScrollView className="flex-1">
+        {/* Profile Header */}
+        <View className="bg-gradient-to-b from-blue-500 to-blue-600 px-6 pt-8 pb-12">
+          {/* Profile Image */}
+          <View className="items-center mb-4">
+            <View className="relative">
+              {/* Default User Avatar Icon */}
+              <View className="w-32 h-32 rounded-full bg-white items-center justify-center border-4 border-white shadow-lg">
+                <Ionicons name="person" size={64} color="#3B82F6" />
+              </View>
+            </View>
+
+            {/* Name and Role */}
+            <Text className="text-white text-2xl font-bold mt-4">
+              {formData.fullName || "User Name"}
             </Text>
+            <View className="bg-white/20 px-4 py-1 rounded-full mt-2">
+              <Text className="text-white font-semibold capitalize">
+                {role === "admin" ? "Administrator" : "User"}
+              </Text>
+            </View>
 
-            <Text className="text-gray-600 dark:text-gray-400">
-              {profileData.email}
-            </Text>
+            {/* Member Since */}
+            <View className="flex-row items-center mt-3">
+              <Ionicons name="calendar-outline" size={14} color="white" />
+              <Text className="text-white text-sm ml-1 opacity-90">
+                Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : 'January 2026'}
+              </Text>
+            </View>
+          </View>
+        </View>
 
-            {/* Edit/Save Buttons */}
-            <View className="flex-row mt-4 space-x-3">
-              {!isEditing ? (
-                <TouchableOpacity
-                  className="bg-emerald-600 dark:bg-emerald-500 px-6 py-2 rounded-full flex-row items-center"
-                  onPress={() => setIsEditing(true)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="create-outline" size={18} color="white" />
-                  <Text className="text-white font-medium ml-2">
-                    Edit Profile
+        {/* Stats Cards */}
+        <View className="px-6 -mt-8 mb-6">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4">
+            <View className="flex-row justify-around">
+              {stats.map((stat, index) => (
+                <View key={index} className="items-center flex-1">
+                  <View className={`${stat.color} w-12 h-12 rounded-xl items-center justify-center mb-2`}>
+                    <Ionicons name={stat.icon} size={24} color="white" />
+                  </View>
+                  <Text className="text-2xl font-bold text-gray-800 dark:text-white">
+                    {stat.value}
                   </Text>
-                </TouchableOpacity>
-              ) : (
-                <>
-                  <TouchableOpacity
-                    className="bg-gray-500 px-6 py-2 rounded-full"
-                    onPress={handleCancel}
-                    activeOpacity={0.8}
-                  >
-                    <Text className="text-white font-medium">Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="bg-emerald-600 dark:bg-emerald-500 px-6 py-2 rounded-full"
-                    onPress={handleSave}
-                    activeOpacity={0.8}
-                  >
-                    <Text className="text-white font-medium">Save</Text>
-                  </TouchableOpacity>
-                </>
-              )}
+                  <Text className="text-gray-600 dark:text-gray-400 text-xs text-center">
+                    {stat.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        {/* Profile Information */}
+        <View className="px-6 mb-6">
+          <Text className="text-xl font-bold text-gray-800 dark:text-white mb-4">
+            Personal Information
+          </Text>
+
+          {/* Full Name */}
+          <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm">
+            <Text className="text-gray-600 dark:text-gray-400 text-sm mb-1">Full Name</Text>
+            {editMode ? (
+              <TextInput
+                value={formData.fullName}
+                onChangeText={(text) => setFormData({ ...formData, fullName: text })}
+                className="text-gray-800 dark:text-white font-semibold"
+                placeholder="Enter your name"
+                placeholderTextColor="#9CA3AF"
+              />
+            ) : (
+              <Text className="text-gray-800 dark:text-white font-semibold">
+                {formData.fullName || "Not set"}
+              </Text>
+            )}
+          </View>
+
+          {/* Email */}
+          <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm">
+            <Text className="text-gray-600 dark:text-gray-400 text-sm mb-1">Email Address</Text>
+            <View className="flex-row items-center">
+              <Ionicons name="mail-outline" size={18} color="#9CA3AF" />
+              <Text className="text-gray-800 dark:text-white font-semibold ml-2">
+                {formData.email || "Not set"}
+              </Text>
             </View>
           </View>
 
-          {/* Stats Cards */}
-          <View className="flex-row px-4 py-4">
-            {statsData.map(renderStatCard)}
-          </View>
-
-          {/* Personal Information */}
-          <View className="mx-4 mb-6 p-4 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
-            <Text className="text-lg font-bold mb-4 text-gray-900 dark:text-white">
-              Personal Information
-            </Text>
-
-            {renderInputField("Full Name", "name", "Enter your full name")}
-            {renderInputField(
-              "Email Address",
-              "email",
-              "Enter your email",
-              false,
-              "email-address"
-            )}
-            {renderInputField(
-              "Phone Number",
-              "phone",
-              "Enter your phone number",
-              false,
-              "phone-pad"
-            )}
-            {renderInputField("Date of Birth", "dateOfBirth", "DD/MM/YYYY")}
-            {renderInputField("Gender", "gender", "Select gender")}
-            {renderInputField("Blood Group", "bloodGroup", "Enter blood group")}
-            {renderInputField(
-              "Address",
-              "address",
-              "Enter your complete address",
-              true
+          {/* Phone */}
+          <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm">
+            <Text className="text-gray-600 dark:text-gray-400 text-sm mb-1">Phone Number</Text>
+            {editMode ? (
+              <View className="flex-row items-center">
+                <Ionicons name="call-outline" size={18} color="#9CA3AF" />
+                <TextInput
+                  value={formData.phone}
+                  onChangeText={(text) => setFormData({ ...formData, phone: text })}
+                  className="text-gray-800 dark:text-white font-semibold ml-2 flex-1"
+                  placeholder="Enter phone number"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="phone-pad"
+                />
+              </View>
+            ) : (
+              <View className="flex-row items-center">
+                <Ionicons name="call-outline" size={18} color="#9CA3AF" />
+                <Text className="text-gray-800 dark:text-white font-semibold ml-2">
+                  {formData.phone || "Not set"}
+                </Text>
+              </View>
             )}
           </View>
 
-          {/* Emergency Contact */}
-          <View className="mx-4 mb-6 p-4 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
-            <Text className="text-lg font-bold mb-4 text-gray-900 dark:text-white">
-              Emergency Contact
-            </Text>
+          {/* Role-specific fields */}
+          {role === "admin" ? (
+            <>
+              {/* Department */}
+              <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm">
+                <Text className="text-gray-600 dark:text-gray-400 text-sm mb-1">Department</Text>
+                {editMode ? (
+                  <TextInput
+                    value={formData.department}
+                    onChangeText={(text) => setFormData({ ...formData, department: text })}
+                    className="text-gray-800 dark:text-white font-semibold"
+                    placeholder="Enter department"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                ) : (
+                  <Text className="text-gray-800 dark:text-white font-semibold">
+                    {formData.department || "Not set"}
+                  </Text>
+                )}
+              </View>
 
-            {renderInputField(
-              "Contact Name",
-              "emergencyName",
-              "Emergency contact name"
-            )}
-            {renderInputField(
-              "Phone Number",
-              "emergencyContact",
-              "Emergency contact number",
-              false,
-              "phone-pad"
-            )}
-          </View>
+              {/* Employee ID */}
+              <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm">
+                <Text className="text-gray-600 dark:text-gray-400 text-sm mb-1">Employee ID</Text>
+                <Text className="text-gray-800 dark:text-white font-semibold">
+                  {formData.employeeId || "Not set"}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              {/* Address */}
+              <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm">
+                <Text className="text-gray-600 dark:text-gray-400 text-sm mb-1">Address</Text>
+                {editMode ? (
+                  <TextInput
+                    value={formData.address}
+                    onChangeText={(text) => setFormData({ ...formData, address: text })}
+                    className="text-gray-800 dark:text-white font-semibold"
+                    placeholder="Enter address"
+                    placeholderTextColor="#9CA3AF"
+                    multiline
+                  />
+                ) : (
+                  <Text className="text-gray-800 dark:text-white font-semibold">
+                    {formData.address || "Not set"}
+                  </Text>
+                )}
+              </View>
 
-          {/* Medical Information */}
-          <View className="mx-4 mb-6 p-4 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
-            <Text className="text-lg font-bold mb-4 text-gray-900 dark:text-white">
-              Medical Information
-            </Text>
+              {/* Date of Birth */}
+              <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm">
+                <Text className="text-gray-600 dark:text-gray-400 text-sm mb-1">Date of Birth</Text>
+                {editMode ? (
+                  <TextInput
+                    value={formData.dateOfBirth}
+                    onChangeText={(text) => setFormData({ ...formData, dateOfBirth: text })}
+                    className="text-gray-800 dark:text-white font-semibold"
+                    placeholder="DD/MM/YYYY"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                ) : (
+                  <Text className="text-gray-800 dark:text-white font-semibold">
+                    {formData.dateOfBirth || "Not set"}
+                  </Text>
+                )}
+              </View>
 
-            {renderInputField(
-              "Known Allergies",
-              "allergies",
-              "List any known allergies",
-              true
-            )}
-            {renderInputField(
-              "Chronic Conditions",
-              "chronicConditions",
-              "List chronic conditions",
-              true
-            )}
-          </View>
+              {/* Gender */}
+              <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm">
+                <Text className="text-gray-600 dark:text-gray-400 text-sm mb-1">Gender</Text>
+                {editMode ? (
+                  <View className="flex-row mt-2">
+                    {["Male", "Female", "Other"].map((gender) => (
+                      <TouchableOpacity
+                        key={gender}
+                        onPress={() => setFormData({ ...formData, gender })}
+                        className={`flex-1 mr-2 py-2 rounded-lg ${
+                          formData.gender === gender
+                            ? "bg-blue-500"
+                            : "bg-gray-100 dark:bg-gray-700"
+                        }`}
+                      >
+                        <Text
+                          className={`text-center font-semibold ${
+                            formData.gender === gender
+                              ? "text-white"
+                              : "text-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          {gender}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : (
+                  <Text className="text-gray-800 dark:text-white font-semibold">
+                    {formData.gender || "Not set"}
+                  </Text>
+                )}
+              </View>
+            </>
+          )}
 
-          {/* Quick Actions */}
-          <View className="mx-4 mb-6 p-4 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
-            <Text className="text-lg font-bold mb-4 text-gray-900 dark:text-white">
-              Quick Actions
-            </Text>
-
-            <TouchableOpacity
-              className="flex-row items-center py-3 border-b border-gray-100 dark:border-gray-700"
-              onPress={() => navigation.navigate("OrderHistory")}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="receipt-outline" size={24} color="#059669" />
-              <Text className="flex-1 ml-4 text-gray-900 dark:text-white">
-                Order History
-              </Text>
-              <Ionicons name="chevron-forward" size={20} color="#6b7280" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="flex-row items-center py-3 border-b border-gray-100 dark:border-gray-700"
-              onPress={() => console.log("Prescription History")}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="document-text-outline"
-                size={24}
-                color="#059669"
+          {/* Bio */}
+          <View className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm">
+            <Text className="text-gray-600 dark:text-gray-400 text-sm mb-1">Bio</Text>
+            {editMode ? (
+              <TextInput
+                value={formData.bio}
+                onChangeText={(text) => setFormData({ ...formData, bio: text })}
+                className="text-gray-800 dark:text-white"
+                placeholder="Tell us about yourself"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                style={{ textAlignVertical: 'top' }}
               />
-              <Text className="flex-1 ml-4 text-gray-900 dark:text-white">
-                Prescription History
+            ) : (
+              <Text className="text-gray-800 dark:text-white">
+                {formData.bio || "No bio added yet"}
               </Text>
-              <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+            )}
+          </View>
+        </View>
+
+        {/* Account Settings */}
+        {!editMode && (
+          <View className="px-6 mb-6">
+            <Text className="text-xl font-bold text-gray-800 dark:text-white mb-4">
+              Account Settings
+            </Text>
+
+            {/* Change Password */}
+            <TouchableOpacity
+              onPress={() => setChangePasswordModal(true)}
+              className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm flex-row items-center justify-between"
+            >
+              <View className="flex-row items-center">
+                <View className="bg-purple-100 dark:bg-purple-900/30 w-10 h-10 rounded-lg items-center justify-center">
+                  <Ionicons name="lock-closed" size={20} color="#8B5CF6" />
+                </View>
+                <Text className="text-gray-800 dark:text-white font-semibold ml-3">
+                  Change Password
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
             </TouchableOpacity>
 
+            {/* Logout */}
             <TouchableOpacity
-              className="flex-row items-center py-3 border-b border-gray-100 dark:border-gray-700"
-              onPress={() => console.log("Saved Medicines")}
-              activeOpacity={0.7}
+              onPress={handleLogout}
+              className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm flex-row items-center justify-between"
             >
-              <Ionicons name="bookmark-outline" size={24} color="#059669" />
-              <Text className="flex-1 ml-4 text-gray-900 dark:text-white">
-                Saved Medicines
-              </Text>
-              <Ionicons name="chevron-forward" size={20} color="#6b7280" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="flex-row items-center py-3"
-              onPress={() => navigation.navigate("Settings")}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="settings-outline" size={24} color="#059669" />
-              <Text className="flex-1 ml-4 text-gray-900 dark:text-white">
-                Settings
-              </Text>
-              <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+              <View className="flex-row items-center">
+                <View className="bg-red-100 dark:bg-red-900/30 w-10 h-10 rounded-lg items-center justify-center">
+                  <Ionicons name="log-out" size={20} color="#EF4444" />
+                </View>
+                <Text className="text-red-600 dark:text-red-400 font-semibold ml-3">
+                  Logout
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#EF4444" />
             </TouchableOpacity>
           </View>
+        )}
 
-          {/* Account Actions */}
-          <View className="px-4 pb-6">
-            <TouchableOpacity
-              className="py-4 rounded-lg border border-red-300 dark:border-red-600 flex-row justify-center items-center mb-3"
-              onPress={() => {
-                Alert.alert(
-                  "Deactivate Account",
-                  "Are you sure you want to deactivate your account? This action can be undone later.",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Deactivate",
-                      style: "destructive",
-                      onPress: () => console.log("Account deactivated"),
-                    },
-                  ]
-                );
-              }}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name="person-remove-outline"
-                size={20}
-                color="#dc2626"
-              />
-              <Text className="text-red-600 text-lg font-medium ml-2">
-                Deactivate Account
-              </Text>
-            </TouchableOpacity>
+        {/* Bottom Padding */}
+        <View className="h-6" />
+      </ScrollView>
 
-            <TouchableOpacity
-              className="bg-red-600 dark:bg-red-500 py-4 rounded-lg flex-row justify-center items-center"
-              onPress={() => {
-                Alert.alert(
-                  "Delete Account",
-                  "This will permanently delete your account and all data. This action cannot be undone.",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Delete",
-                      style: "destructive",
-                      onPress: () => console.log("Account deleted"),
-                    },
-                  ]
-                );
-              }}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="trash-outline" size={20} color="white" />
-              <Text className="text-white text-lg font-semibold ml-2">
-                Delete Account
+      {/* Edit Mode Actions */}
+      {editMode && (
+        <View className="bg-white dark:bg-gray-800 px-6 py-4 shadow-lg flex-row">
+          <TouchableOpacity
+            onPress={handleCancelEdit}
+            className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-xl py-4 mr-2"
+          >
+            <Text className="text-gray-700 dark:text-gray-300 font-bold text-center">
+              Cancel
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleSaveProfile}
+            disabled={loading}
+            className="flex-1 bg-blue-500 rounded-xl py-4"
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text className="text-white font-bold text-center">Save Changes</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Change Password Modal */}
+      <Modal
+        visible={changePasswordModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setChangePasswordModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white dark:bg-gray-800 rounded-t-3xl p-6" style={{ maxHeight: '80%' }}>
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-xl font-bold text-gray-800 dark:text-white">
+                Change Password
               </Text>
-            </TouchableOpacity>
+              <TouchableOpacity onPress={() => setChangePasswordModal(false)}>
+                <Ionicons name="close" size={24} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView>
+              {/* Current Password */}
+              <View className="mb-4">
+                <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+                  Current Password
+                </Text>
+                <View className="bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4">
+                  <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
+                  <TextInput
+                    placeholder="Enter current password"
+                    value={passwordData.currentPassword}
+                    onChangeText={(text) => setPasswordData({ ...passwordData, currentPassword: text })}
+                    secureTextEntry={!showPasswords.current}
+                    className="flex-1 p-4 text-gray-800 dark:text-white"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity onPress={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}>
+                    <Ionicons
+                      name={showPasswords.current ? "eye-outline" : "eye-off-outline"}
+                      size={20}
+                      color="#9CA3AF"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* New Password */}
+              <View className="mb-4">
+                <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+                  New Password
+                </Text>
+                <View className="bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4">
+                  <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
+                  <TextInput
+                    placeholder="Enter new password"
+                    value={passwordData.newPassword}
+                    onChangeText={(text) => setPasswordData({ ...passwordData, newPassword: text })}
+                    secureTextEntry={!showPasswords.new}
+                    className="flex-1 p-4 text-gray-800 dark:text-white"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity onPress={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}>
+                    <Ionicons
+                      name={showPasswords.new ? "eye-outline" : "eye-off-outline"}
+                      size={20}
+                      color="#9CA3AF"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Confirm Password */}
+              <View className="mb-6">
+                <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+                  Confirm New Password
+                </Text>
+                <View className="bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4">
+                  <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
+                  <TextInput
+                    placeholder="Confirm new password"
+                    value={passwordData.confirmPassword}
+                    onChangeText={(text) => setPasswordData({ ...passwordData, confirmPassword: text })}
+                    secureTextEntry={!showPasswords.confirm}
+                    className="flex-1 p-4 text-gray-800 dark:text-white"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity onPress={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}>
+                    <Ionicons
+                      name={showPasswords.confirm ? "eye-outline" : "eye-off-outline"}
+                      size={20}
+                      color="#9CA3AF"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleChangePassword}
+                disabled={loading}
+                className="bg-blue-500 rounded-xl py-4 items-center mb-6"
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text className="text-white font-bold text-lg">Change Password</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
           </View>
-        </ScrollView>
-      </View>
-    </NavLayout>
+        </View>
+      </Modal>
+    </View>
   );
-};
-
-export default ProfileScreen;
-
-{
-  /* <NavLayout title="Profile" showAiChat={false}>
-      <View className="flex-1 justify-center items-center">
-        <Text className="text-gray-900 dark:text-white text-lg">
-          Profile Screen
-        </Text>
-      </View>
-    </NavLayout> */
 }

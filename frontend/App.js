@@ -1,52 +1,44 @@
-// import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-// import { NavigationContainer } from "@react-navigation/native";
-// import RootNavigator from "./src/navigation/RootNavigator";
-// import ThemeProvider from "./src/theme/ThemeProvider";
-
+// App.jsx
 import React, { useEffect, useRef } from "react";
-import { BackHandler, Alert } from "react-native";
+import { BackHandler, Alert, View, ActivityIndicator, Text } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import RootNavigator from "./src/navigation/RootNavigator";
 import ThemeProvider from "./src/theme/ThemeProvider";
 import * as SplashScreen from 'expo-splash-screen';
+import useAuthStore from "./src/state/authStore";
 
+// Keep splash screen visible while we check authentication
+SplashScreen.preventAutoHideAsync();
 
 export default function App() {
-
   const navigationRef = useRef();
+  const { initialize, isLoading } = useAuthStore();
 
   useEffect(() => {
     async function prepare() {
       try {
-        // Pre-load fonts, make any API calls you need to do here
-        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+        // Initialize authentication (check AsyncStorage for saved login)
+        await initialize();
+        
+        // Additional setup: pre-load fonts, etc.
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (e) {
-        console.warn(e);
+        console.warn('App initialization error:', e);
       } finally {
-        // Tell the application to render
+        // Hide splash screen
         await SplashScreen.hideAsync();
       }
     }
 
     prepare();
-
-    // const hideSplash = async () => {
-    //   // Wait 5 seconds so you can see the splash
-    //   await new Promise(resolve => setTimeout(resolve, 9000));
-    //   await SplashScreen.hideAsync();
-    // };
-    
-    // hideSplash();
   }, []);
 
   useEffect(() => {
     const backAction = () => {
-      // Check if we can go back
       const canGoBack = navigationRef.current?.canGoBack();
       
       if (canGoBack) {
-        // Navigate to previous screen
         navigationRef.current?.goBack();
         return true;
       }
@@ -67,15 +59,26 @@ export default function App() {
     return () => backHandler.remove();
   }, []);
 
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return (
+      <ThemeProvider>
+        <SafeAreaProvider>
+          <SafeAreaView className="flex-1 bg-white dark:bg-gray-900 items-center justify-center">
+            <ActivityIndicator size="large" color="#3B82F6" />
+            <Text className="text-gray-600 dark:text-gray-400 mt-4">
+              Loading...
+            </Text>
+          </SafeAreaView>
+        </SafeAreaProvider>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider>
       <SafeAreaProvider>
-        {/* Single SafeAreaView for entire app */}
-        <SafeAreaView
-          className=" bg-white dark:bg-gray-900"
-          style={{ flex: 1 }}
-        >
+        <SafeAreaView className="bg-white dark:bg-gray-900" style={{ flex: 1 }}>
           <NavigationContainer ref={navigationRef}>
             <RootNavigator />
           </NavigationContainer>
