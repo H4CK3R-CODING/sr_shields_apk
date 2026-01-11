@@ -28,9 +28,7 @@ export const registerUser = async (req, res) => {
       confirmPassword,
       role,
       // Admin specific
-      adminCode,
       department,
-      employeeId,
       // User specific
       address,
       dateOfBirth,
@@ -64,30 +62,30 @@ export const registerUser = async (req, res) => {
 
     // Validate admin code if role is admin
     if (role === 'admin') {
-      const VALID_ADMIN_CODE = process.env.ADMIN_REGISTRATION_CODE || 'ADMIN2024';
-      if (adminCode !== VALID_ADMIN_CODE) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid admin registration code'
-        });
-      }
+      // const VALID_ADMIN_CODE = process.env.ADMIN_REGISTRATION_CODE || 'ADMIN2024';
+      // if (adminCode !== VALID_ADMIN_CODE) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: 'Invalid admin registration code'
+      //   });
+      // }
 
       // Check if required admin fields are provided
-      if (!department || !employeeId) {
+      if (!department) {
         return res.status(400).json({
           success: false,
-          message: 'Department and Employee ID are required for admin registration'
+          message: 'Department are required for admin registration'
         });
       }
 
       // Check if employee ID already exists
-      const existingEmployee = await User.findOne({ employeeId });
-      if (existingEmployee) {
-        return res.status(400).json({
-          success: false,
-          message: 'Employee ID already exists'
-        });
-      }
+      // const existingEmployee = await User.findOne({ employeeId });
+      // if (existingEmployee) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: 'Employee ID already exists'
+      //   });
+      // }
     }
 
     // Validate user specific fields
@@ -111,9 +109,7 @@ export const registerUser = async (req, res) => {
 
     // Add role-specific fields
     if (role === 'admin') {
-      userData.adminCode = adminCode;
       userData.department = department;
-      userData.employeeId = employeeId;
     } else {
       userData.address = address;
       userData.dateOfBirth = dateOfBirth;

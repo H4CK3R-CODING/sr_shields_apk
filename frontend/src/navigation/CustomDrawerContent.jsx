@@ -132,7 +132,7 @@ const CustomDrawerContent = ({ navigation, role }) => {
             label: "Manage Jobs / Forms",
             screen: "ManageJobsForms",
           },
-          { iconName: "people-outline", label: "Users", screen: "Users" },
+          { iconName: "people-outline", label: "Users", screen: "ManageUsersScreen" },
         ],
       },
       {

@@ -13,10 +13,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import useAuthStore from "../../state/authStore";
+import Toast from "react-native-toast-message";
 
 export default function RegistrationPage({ navigation }) {
   const { register } = useAuthStore();
-  
+
   // Form state
   const [formData, setFormData] = useState({
     fullName: "",
@@ -26,9 +27,7 @@ export default function RegistrationPage({ navigation }) {
     confirmPassword: "",
     role: "user", // user or admin
     // Admin specific fields
-    adminCode: "",
     department: "",
-    employeeId: "",
     // User specific fields
     address: "",
     dateOfBirth: "",
@@ -56,10 +55,12 @@ export default function RegistrationPage({ navigation }) {
   // Validate password strength
   const isStrongPassword = (password) => {
     // At least 8 characters, 1 uppercase, 1 lowercase, 1 number
-    return password.length >= 8 && 
-           /[A-Z]/.test(password) && 
-           /[a-z]/.test(password) && 
-           /[0-9]/.test(password);
+    return (
+      password.length >= 8 &&
+      /[A-Z]/.test(password) &&
+      /[a-z]/.test(password) &&
+      /[0-9]/.test(password)
+    );
   };
 
   // Validate Step 1 (Basic Info)
@@ -87,7 +88,8 @@ export default function RegistrationPage({ navigation }) {
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (!isStrongPassword(formData.password)) {
-      newErrors.password = "Password must be 8+ chars with uppercase, lowercase, and number";
+      newErrors.password =
+        "Password must be 8+ chars with uppercase, lowercase, and number";
     }
 
     if (!formData.confirmPassword) {
@@ -105,18 +107,8 @@ export default function RegistrationPage({ navigation }) {
     const newErrors = {};
 
     if (formData.role === "admin") {
-      if (!formData.adminCode.trim()) {
-        newErrors.adminCode = "Admin code is required";
-      } else if (formData.adminCode !== "CSC2024ADMIN") {
-        newErrors.adminCode = "Invalid admin code";
-      }
-
       if (!formData.department.trim()) {
         newErrors.department = "Department is required";
-      }
-
-      if (!formData.employeeId.trim()) {
-        newErrors.employeeId = "Employee ID is required";
       }
     } else {
       if (!formData.address.trim()) {
@@ -161,7 +153,7 @@ export default function RegistrationPage({ navigation }) {
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Prepare user data
       const userData = {
@@ -178,7 +170,6 @@ export default function RegistrationPage({ navigation }) {
       // Add role-specific data
       if (formData.role === "admin") {
         userData.department = formData.department.trim();
-        userData.employeeId = formData.employeeId.trim();
       } else {
         userData.address = formData.address.trim();
         userData.dateOfBirth = new Date(`${year}-${month}-${day}`);
@@ -187,20 +178,32 @@ export default function RegistrationPage({ navigation }) {
 
       // Call register function from auth store
       console.log("Registering user with data:", userData);
-      await register(userData, formData.password);
-
-      Alert.alert(
-        "Success!",
-        `Your ${formData.role} account has been created successfully. Please login to continue.`,
-        [
-          {
-            text: "OK",
-            onPress: () => navigation.navigate("Login"),
-          },
-        ]
-      );
+      const { error } = await register(userData, formData.password);
+      if (error) {
+        Toast.show({
+          type: "error",
+          text1: "Registration Failed",
+          position: "top",
+          visibilityTime: 3000,
+        });
+      } else {
+        Toast.show({
+          type: "success",
+          text1: "Registration Successful",
+          text2: "You can now log in 👋",
+          position: "top",
+          visibilityTime: 3000,
+        });
+        // Wait a bit, then navigate
+        setTimeout(() => {
+          navigation.navigate("Login");
+        }, 1500); // Navigate after 1.5 seconds
+      }
     } catch (error) {
-      Alert.alert("Error", error.message || "Registration failed. Please try again.");
+      Toast.show({
+        type: "error",
+        text1: "Registration Failed",
+      });
     } finally {
       setLoading(false);
     }
@@ -230,7 +233,9 @@ export default function RegistrationPage({ navigation }) {
         <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
           Full Name *
         </Text>
-        <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.fullName ? 'border-2 border-red-500' : ''}`}>
+        <View
+          className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.fullName ? "border-2 border-red-500" : ""}`}
+        >
           <Ionicons name="person-outline" size={20} color="#9CA3AF" />
           <TextInput
             placeholder="Enter your full name"
@@ -241,7 +246,9 @@ export default function RegistrationPage({ navigation }) {
           />
         </View>
         {errors.fullName && (
-          <Text className="text-red-500 text-sm mt-1 ml-1">{errors.fullName}</Text>
+          <Text className="text-red-500 text-sm mt-1 ml-1">
+            {errors.fullName}
+          </Text>
         )}
       </View>
 
@@ -250,7 +257,9 @@ export default function RegistrationPage({ navigation }) {
         <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
           Email Address *
         </Text>
-        <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.email ? 'border-2 border-red-500' : ''}`}>
+        <View
+          className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.email ? "border-2 border-red-500" : ""}`}
+        >
           <Ionicons name="mail-outline" size={20} color="#9CA3AF" />
           <TextInput
             placeholder="Enter your email"
@@ -272,7 +281,9 @@ export default function RegistrationPage({ navigation }) {
         <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
           Phone Number *
         </Text>
-        <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.phone ? 'border-2 border-red-500' : ''}`}>
+        <View
+          className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.phone ? "border-2 border-red-500" : ""}`}
+        >
           <Ionicons name="call-outline" size={20} color="#9CA3AF" />
           <TextInput
             placeholder="10-digit phone number"
@@ -294,7 +305,9 @@ export default function RegistrationPage({ navigation }) {
         <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
           Password *
         </Text>
-        <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.password ? 'border-2 border-red-500' : ''}`}>
+        <View
+          className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.password ? "border-2 border-red-500" : ""}`}
+        >
           <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
           <TextInput
             placeholder="Create a strong password"
@@ -313,7 +326,9 @@ export default function RegistrationPage({ navigation }) {
           </TouchableOpacity>
         </View>
         {errors.password && (
-          <Text className="text-red-500 text-sm mt-1 ml-1">{errors.password}</Text>
+          <Text className="text-red-500 text-sm mt-1 ml-1">
+            {errors.password}
+          </Text>
         )}
       </View>
 
@@ -322,7 +337,9 @@ export default function RegistrationPage({ navigation }) {
         <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
           Confirm Password *
         </Text>
-        <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.confirmPassword ? 'border-2 border-red-500' : ''}`}>
+        <View
+          className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.confirmPassword ? "border-2 border-red-500" : ""}`}
+        >
           <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
           <TextInput
             placeholder="Re-enter your password"
@@ -332,7 +349,9 @@ export default function RegistrationPage({ navigation }) {
             className="flex-1 p-4 text-gray-800 dark:text-white"
             placeholderTextColor="#9CA3AF"
           />
-          <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+          <TouchableOpacity
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+          >
             <Ionicons
               name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
               size={20}
@@ -341,7 +360,9 @@ export default function RegistrationPage({ navigation }) {
           </TouchableOpacity>
         </View>
         {errors.confirmPassword && (
-          <Text className="text-red-500 text-sm mt-1 ml-1">{errors.confirmPassword}</Text>
+          <Text className="text-red-500 text-sm mt-1 ml-1">
+            {errors.confirmPassword}
+          </Text>
         )}
       </View>
     </View>
@@ -368,10 +389,18 @@ export default function RegistrationPage({ navigation }) {
         activeOpacity={0.7}
       >
         <View className="flex-row items-center mb-3">
-          <View className={`w-16 h-16 rounded-2xl items-center justify-center ${
-            formData.role === "user" ? "bg-blue-500" : "bg-gray-200 dark:bg-gray-700"
-          }`}>
-            <Ionicons name="person" size={32} color={formData.role === "user" ? "white" : "#9CA3AF"} />
+          <View
+            className={`w-16 h-16 rounded-2xl items-center justify-center ${
+              formData.role === "user"
+                ? "bg-blue-500"
+                : "bg-gray-200 dark:bg-gray-700"
+            }`}
+          >
+            <Ionicons
+              name="person"
+              size={32}
+              color={formData.role === "user" ? "white" : "#9CA3AF"}
+            />
           </View>
           <View className="flex-1 ml-4">
             <Text className="text-xl font-bold text-gray-800 dark:text-white mb-1">
@@ -409,10 +438,18 @@ export default function RegistrationPage({ navigation }) {
         activeOpacity={0.7}
       >
         <View className="flex-row items-center mb-3">
-          <View className={`w-16 h-16 rounded-2xl items-center justify-center ${
-            formData.role === "admin" ? "bg-purple-500" : "bg-gray-200 dark:bg-gray-700"
-          }`}>
-            <Ionicons name="shield-checkmark" size={32} color={formData.role === "admin" ? "white" : "#9CA3AF"} />
+          <View
+            className={`w-16 h-16 rounded-2xl items-center justify-center ${
+              formData.role === "admin"
+                ? "bg-purple-500"
+                : "bg-gray-200 dark:bg-gray-700"
+            }`}
+          >
+            <Ionicons
+              name="shield-checkmark"
+              size={32}
+              color={formData.role === "admin" ? "white" : "#9CA3AF"}
+            />
           </View>
           <View className="flex-1 ml-4">
             <Text className="text-xl font-bold text-gray-800 dark:text-white mb-1">
@@ -460,7 +497,7 @@ export default function RegistrationPage({ navigation }) {
           </Text>
 
           {/* Admin Code */}
-          <View className="mb-4">
+          {/* <View className="mb-4">
             <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
               Admin Code *
             </Text>
@@ -481,14 +518,16 @@ export default function RegistrationPage({ navigation }) {
             <Text className="text-gray-500 dark:text-gray-400 text-xs mt-1 ml-1">
               Contact your organization for the admin code
             </Text>
-          </View>
+          </View> */}
 
           {/* Department */}
           <View className="mb-4">
             <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
               Department *
             </Text>
-            <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.department ? 'border-2 border-red-500' : ''}`}>
+            <View
+              className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.department ? "border-2 border-red-500" : ""}`}
+            >
               <Ionicons name="business-outline" size={20} color="#9CA3AF" />
               <TextInput
                 placeholder="Your department"
@@ -499,12 +538,14 @@ export default function RegistrationPage({ navigation }) {
               />
             </View>
             {errors.department && (
-              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.department}</Text>
+              <Text className="text-red-500 text-sm mt-1 ml-1">
+                {errors.department}
+              </Text>
             )}
           </View>
 
           {/* Employee ID */}
-          <View className="mb-6">
+          {/* <View className="mb-6">
             <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
               Employee ID *
             </Text>
@@ -521,7 +562,7 @@ export default function RegistrationPage({ navigation }) {
             {errors.employeeId && (
               <Text className="text-red-500 text-sm mt-1 ml-1">{errors.employeeId}</Text>
             )}
-          </View>
+          </View>*/}
         </View>
       );
     } else {
@@ -539,8 +580,15 @@ export default function RegistrationPage({ navigation }) {
             <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
               Address *
             </Text>
-            <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-start px-4 ${errors.address ? 'border-2 border-red-500' : ''}`}>
-              <Ionicons name="location-outline" size={20} color="#9CA3AF" className="mt-4" />
+            <View
+              className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-start px-4 ${errors.address ? "border-2 border-red-500" : ""}`}
+            >
+              <Ionicons
+                name="location-outline"
+                size={20}
+                color="#9CA3AF"
+                className="mt-4"
+              />
               <TextInput
                 placeholder="Enter your address"
                 value={formData.address}
@@ -549,11 +597,13 @@ export default function RegistrationPage({ navigation }) {
                 numberOfLines={3}
                 className="flex-1 p-4 text-gray-800 dark:text-white"
                 placeholderTextColor="#9CA3AF"
-                style={{ textAlignVertical: 'top' }}
+                style={{ textAlignVertical: "top" }}
               />
             </View>
             {errors.address && (
-              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.address}</Text>
+              <Text className="text-red-500 text-sm mt-1 ml-1">
+                {errors.address}
+              </Text>
             )}
           </View>
 
@@ -562,7 +612,9 @@ export default function RegistrationPage({ navigation }) {
             <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
               Date of Birth *
             </Text>
-            <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.dateOfBirth ? 'border-2 border-red-500' : ''}`}>
+            <View
+              className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.dateOfBirth ? "border-2 border-red-500" : ""}`}
+            >
               <Ionicons name="calendar-outline" size={20} color="#9CA3AF" />
               <TextInput
                 placeholder="DD/MM/YYYY"
@@ -573,7 +625,9 @@ export default function RegistrationPage({ navigation }) {
               />
             </View>
             {errors.dateOfBirth && (
-              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.dateOfBirth}</Text>
+              <Text className="text-red-500 text-sm mt-1 ml-1">
+                {errors.dateOfBirth}
+              </Text>
             )}
           </View>
 
@@ -606,7 +660,9 @@ export default function RegistrationPage({ navigation }) {
               ))}
             </View>
             {errors.gender && (
-              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.gender}</Text>
+              <Text className="text-red-500 text-sm mt-1 ml-1">
+                {errors.gender}
+              </Text>
             )}
           </View>
         </View>
@@ -623,7 +679,7 @@ export default function RegistrationPage({ navigation }) {
         {/* Header */}
         <View className="bg-white dark:bg-gray-800 px-6 pt-12 pb-6 shadow-sm">
           <TouchableOpacity
-            onPress={() => step === 1 ? navigation.goBack() : handleBack()}
+            onPress={() => (step === 1 ? navigation.goBack() : handleBack())}
             className="mb-4"
           >
             <Ionicons name="arrow-back" size={24} color="#6B7280" />
@@ -671,7 +727,9 @@ export default function RegistrationPage({ navigation }) {
             {loading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text className="text-white font-bold text-lg">Create Account</Text>
+              <Text className="text-white font-bold text-lg">
+                Create Account
+              </Text>
             )}
           </TouchableOpacity>
         )}

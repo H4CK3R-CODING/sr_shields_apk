@@ -1,6 +1,7 @@
 // src/state/authStore.js
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 // api/axios.js
 import axios from "axios";
 
@@ -65,7 +66,7 @@ const useAuthStore = create((set, get) => ({
       set({ isLoading: true });
       console.log(`🔐 Attempting login for: ${email}`);
 
-      const {data, error} = await api.post("/auth/login", {
+      const { data, error } = await api.post("/auth/login", {
         email,
         password,
       });
@@ -96,14 +97,18 @@ const useAuthStore = create((set, get) => ({
       });
 
       console.log("✅ Login successful:", user?.email);
+      
+
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
       console.error("❌ Login error:", error);
       
+
       // Handle different error responses
-      const errorMessage = error.response?.data?.message || error.message || "Login failed";
-      
+      const errorMessage =
+        error.response?.data?.message || error.message || "Login failed";
+
       return { success: false, error: errorMessage };
     }
   },
@@ -113,40 +118,29 @@ const useAuthStore = create((set, get) => ({
     try {
       set({ isLoading: true });
 
-      const response = await api.post("/auth/register", {
+      const {data} = await api.post("/auth/register", {
         ...userData,
         password,
       });
 
-      console.log(response.data);
-      console.log(response);
-
-      // For now, just save user data to AsyncStorage
-      // const newUser = {
-      //   ...userData,
-      //   id: "user_" + Date.now(),
-      // };
-
-      // await AsyncStorage.setItem(
-      //   "registeredUser_" + newUser.email,
-      //   JSON.stringify({ ...newUser, password })
-      // );
-
       set({ isLoading: false });
-      console.log("✅ Registration successful:");
+      console.log("Registration successful:", data);
+      
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
-      console.error("❌ Registration error:", error);
+      console.error("Registration error:", error);
+      
+
       return { success: false, error: error.message };
     }
   },
 
- // Logout
+  // Logout
   logout: async () => {
     try {
       // Clear AsyncStorage
-      await AsyncStorage.removeItem('authData');
+      await AsyncStorage.removeItem("authData");
 
       // Reset state
       set({
@@ -156,9 +150,9 @@ const useAuthStore = create((set, get) => ({
         token: null,
       });
 
-      console.log('✅ Logout successful');
+      console.log("✅ Logout successful");
     } catch (error) {
-      console.error('❌ Logout error:', error);
+      console.error("❌ Logout error:", error);
     }
   },
   // Update Profile
@@ -180,20 +174,20 @@ const useAuthStore = create((set, get) => ({
         token: currentToken,
       };
 
-      await AsyncStorage.setItem('authData', JSON.stringify(authData));
+      await AsyncStorage.setItem("authData", JSON.stringify(authData));
 
       // Update state
       set({ user: updatedUser });
 
-      console.log('✅ Profile updated successfully');
+      console.log("✅ Profile updated successfully");
       return { success: true };
     } catch (error) {
-      console.error('❌ Update profile error:', error);
+      console.error("❌ Update profile error:", error);
       return { success: false, error: error.message };
     }
   },
 
-   // Check token expiry (for JWT tokens)
+  // Check token expiry (for JWT tokens)
   checkTokenExpiry: (token) => {
     // For mock tokens, always return true
     // In production with real JWT tokens:
@@ -203,7 +197,7 @@ const useAuthStore = create((set, get) => ({
       // const decoded = jwtDecode(token);
       // const currentTime = Date.now() / 1000;
       // return decoded.exp > currentTime;
-      
+
       return true; // Mock: always valid
     } catch (error) {
       return false;
@@ -213,24 +207,24 @@ const useAuthStore = create((set, get) => ({
   // Make authenticated API calls (helper function)
   makeAuthenticatedRequest: async (url, options = {}) => {
     const token = get().token;
-    
+
     if (!token) {
-      throw new Error('No authentication token');
+      throw new Error("No authentication token");
     }
 
     const response = await fetch(url, {
       ...options,
       headers: {
         ...options.headers,
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
     });
 
     // If token expired (401), logout
     if (response.status === 401) {
       await get().logout();
-      throw new Error('Session expired. Please login again.');
+      throw new Error("Session expired. Please login again.");
     }
 
     return response;

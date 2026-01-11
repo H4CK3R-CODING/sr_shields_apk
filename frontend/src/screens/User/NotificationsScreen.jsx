@@ -8,28 +8,72 @@ import {
   RefreshControl,
   Modal,
   Alert,
-  Animated
+  Animated,
+  ActivityIndicator
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import useContentStore from "../../state/contentStore";
+import { api } from "../../services/api";
 import CustomHeader from "../../components/CustomHeader";
 
 export default function NotificationsScreen({ navigation }) {
-  const { notifications, markNotificationAsRead, loadAllData } = useContentStore();
+  const [notifications, setNotifications] = useState([]);
+  const [readNotifications, setReadNotifications] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState("all"); // all, unread, high, normal, low
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [markAllModalVisible, setMarkAllModalVisible] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
-    loadAllData();
+    fetchNotifications();
   }, []);
+
+  // Fetch notifications from backend
+  const fetchNotifications = async () => {
+    try {
+      const { data } = await api.get("/notifications/my-notifications");
+      
+      if (data.success) {
+        setNotifications(data.notifications || []);
+        // If backend returns readNotifications array, use it
+        if (data.readNotifications && Array.isArray(data.readNotifications)) {
+          setReadNotifications(data.readNotifications);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      if (error.response?.status !== 401) {
+        Alert.alert('Error', 'Failed to load notifications. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadAllData();
+    await fetchNotifications();
     setRefreshing(false);
+  };
+
+  // Check if notification is read
+  const isRead = (notificationId) => {
+    return readNotifications.includes(notificationId);
+  };
+
+  // Mark notification as read
+  const markAsRead = async (notificationId) => {
+    try {
+      const { data } = await api.put(`/notifications/${notificationId}/read`);
+      
+      if (data.success) {
+        setReadNotifications([...readNotifications, notificationId]);
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
   // Filter notifications
@@ -38,7 +82,7 @@ export default function NotificationsScreen({ navigation }) {
 
     switch (filterType) {
       case "unread":
-        filtered = filtered.filter(n => !n.read);
+        filtered = filtered.filter(n => !isRead(n._id));
         break;
       case "high":
         filtered = filtered.filter(n => n.priority === "high");
@@ -62,7 +106,7 @@ export default function NotificationsScreen({ navigation }) {
   // Get counts for each filter
   const counts = {
     all: notifications.length,
-    unread: notifications.filter(n => !n.read).length,
+    unread: notifications.filter(n => !isRead(n._id)).length,
     high: notifications.filter(n => n.priority === "high").length,
     normal: notifications.filter(n => n.priority === "normal").length,
     low: notifications.filter(n => n.priority === "low").length,
@@ -81,8 +125,8 @@ export default function NotificationsScreen({ navigation }) {
     }).start();
 
     // Mark as read if unread
-    if (!notification.read) {
-      await markNotificationAsRead(notification.id);
+    if (!isRead(notification._id)) {
+      await markAsRead(notification._id);
     }
   };
 
@@ -100,24 +144,29 @@ export default function NotificationsScreen({ navigation }) {
 
   // Mark all as read
   const markAllAsRead = () => {
-    Alert.alert(
-      "Mark All as Read",
-      "Are you sure you want to mark all notifications as read?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Mark All",
-          onPress: async () => {
-            for (const notification of notifications) {
-              if (!notification.read) {
-                await markNotificationAsRead(notification.id);
-              }
-            }
-            Alert.alert("Success", "All notifications marked as read");
-          },
-        },
-      ]
-    );
+    setMarkAllModalVisible(true);
+  };
+
+  const confirmMarkAllAsRead = async () => {
+    try {
+      // Mark all unread notifications as read
+      const unreadNotifications = notifications.filter(n => !isRead(n._id));
+      
+      for (const notification of unreadNotifications) {
+        await markAsRead(notification._id);
+      }
+      
+      setMarkAllModalVisible(false);
+      Alert.alert("Success", "All notifications marked as read");
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      Alert.alert("Error", "Failed to mark all as read");
+      setMarkAllModalVisible(false);
+    }
+  };
+
+  const cancelMarkAllAsRead = () => {
+    setMarkAllModalVisible(false);
   };
 
   // Get priority color
@@ -192,6 +241,21 @@ export default function NotificationsScreen({ navigation }) {
     { key: "normal", label: "Normal", count: counts.normal },
     { key: "low", label: "Low", count: counts.low },
   ];
+
+  // Loading state
+  if (loading) {
+    return (
+      <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+        <CustomHeader title="Notifications" showBack showMenu />
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text className="text-gray-500 dark:text-gray-400 mt-4">
+            Loading notifications...
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-gray-50 dark:bg-gray-900">
@@ -310,11 +374,11 @@ export default function NotificationsScreen({ navigation }) {
         ) : (
           filteredNotifications.map((notification, index) => {
             const colors = getPriorityColor(notification.priority);
-            const isUnread = !notification.read;
+            const isUnread = !isRead(notification._id);
 
             return (
               <TouchableOpacity
-                key={notification.id}
+                key={notification._id}
                 onPress={() => handleNotificationTap(notification)}
                 activeOpacity={0.7}
                 className={`bg-white dark:bg-gray-800 rounded-xl mb-3 shadow-sm overflow-hidden ${
@@ -410,10 +474,10 @@ export default function NotificationsScreen({ navigation }) {
           transparent={true}
           onRequestClose={closeModal}
         >
-          <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="flex-1 bg-black/70 justify-center items-center px-6">
             <Animated.View
               style={{ opacity: fadeAnim }}
-              className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md overflow-hidden"
+              className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
             >
               {/* Modal Header */}
               <View className={`${getPriorityColor(selectedNotification.priority).bg} p-6 pb-4`}>
@@ -437,7 +501,7 @@ export default function NotificationsScreen({ navigation }) {
               </View>
 
               {/* Modal Body */}
-              <ScrollView className="max-h-96 p-6">
+              <ScrollView className="max-h-96 p-6 bg-white dark:bg-gray-800">
                 <Text className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                   {selectedNotification.title}
                 </Text>
@@ -472,7 +536,7 @@ export default function NotificationsScreen({ navigation }) {
               </ScrollView>
 
               {/* Modal Footer */}
-              <View className="p-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <View className="p-6 pt-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <TouchableOpacity
                   onPress={closeModal}
                   className="bg-blue-500 rounded-xl py-4 items-center"
@@ -484,6 +548,48 @@ export default function NotificationsScreen({ navigation }) {
           </View>
         </Modal>
       )}
+
+      {/* Mark All as Read Confirmation Modal */}
+      <Modal
+        visible={markAllModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={cancelMarkAllAsRead}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50 px-6">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm">
+            <View className="items-center mb-4">
+              <View className="bg-blue-100 dark:bg-blue-900/30 w-16 h-16 rounded-full items-center justify-center mb-4">
+                <Ionicons name="checkmark-done" size={32} color="#3B82F6" />
+              </View>
+              <Text className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                Mark All as Read
+              </Text>
+              <Text className="text-gray-600 dark:text-gray-400 text-center">
+                Are you sure you want to mark all {counts.unread} unread notifications as read?
+              </Text>
+            </View>
+
+            <View className="flex-row space-x-3">
+              <TouchableOpacity
+                onPress={cancelMarkAllAsRead}
+                className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-lg p-4 items-center"
+              >
+                <Text className="text-gray-800 dark:text-white font-semibold">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={confirmMarkAllAsRead}
+                className="flex-1 bg-blue-500 rounded-lg p-4 items-center"
+              >
+                <Text className="text-white font-semibold">Mark All</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

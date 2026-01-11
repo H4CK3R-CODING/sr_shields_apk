@@ -45,7 +45,19 @@
       "favicon": "./assets/images/web.png"
     },
     "plugins": [
-      "expo-splash-screen"
+      "expo-splash-screen",
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app needs access to your photos to upload images."
+        }
+      ]
     ],
     "experiments": {},
     "extra": {

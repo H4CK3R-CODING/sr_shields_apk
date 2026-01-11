@@ -4,7 +4,8 @@
 # Dependencies
 # ---------------------
 */node_modules/
-
+*/google-credentials.json
+uploads/
 
 # ---------------------
 # Expo / React Native

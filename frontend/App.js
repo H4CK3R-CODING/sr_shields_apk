@@ -7,6 +7,7 @@ import RootNavigator from "./src/navigation/RootNavigator";
 import ThemeProvider from "./src/theme/ThemeProvider";
 import * as SplashScreen from 'expo-splash-screen';
 import useAuthStore from "./src/state/authStore";
+import Toast from "react-native-toast-message";
 
 // Keep splash screen visible while we check authentication
 SplashScreen.preventAutoHideAsync();
@@ -82,6 +83,7 @@ export default function App() {
           <NavigationContainer ref={navigationRef}>
             <RootNavigator />
           </NavigationContainer>
+          <Toast />
         </SafeAreaView>
       </SafeAreaProvider>
     </ThemeProvider>

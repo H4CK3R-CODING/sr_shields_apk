@@ -12,6 +12,8 @@ import ManageFormsScreen from "../screens/Admin/ManageFormsScreen";
 import SettingsScreen from "../screens/Settings/SettingsScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import HelpSupportScreen from "../screens/Support/HelpSupportScreen";
+import ManageUsersScreen from "../screens/Admin/ManageUsersScreen";
+import ManageNoticesScreen from "../screens/Admin/ManageNoticesScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -36,15 +38,20 @@ export default function AdminNavigator({ role }) {
         component={ManageNotificationsScreen}
         options={{ title: "Notifications" }}
       />
-      {/* <Drawer.Screen 
+      <Drawer.Screen 
         name="ManageNotices" 
         component={ManageNoticesScreen}
         options={{ title: "Notices" }}
-      /> */}
+      />
       <Drawer.Screen 
         name="ManageJobs" 
         component={ManageJobsScreen}
         options={{ title: "Jobs" }}
+      />
+      <Drawer.Screen 
+        name="ManageUsersScreen" 
+        component={ManageUsersScreen}
+        options={{ title: "Users" }}
       />
       <Drawer.Screen 
         name="ManageForms" 
