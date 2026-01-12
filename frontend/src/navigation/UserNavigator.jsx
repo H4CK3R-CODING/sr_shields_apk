@@ -15,6 +15,7 @@ import JobDetailScreen from "../screens/User/JobDetailScreen";
 import SettingsScreen from "../screens/Settings/SettingsScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import HelpSupportScreen from "../screens/Support/HelpSupportScreen";
+import JobsFormsScreen from "../screens/User/JobsFormsScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -45,15 +46,15 @@ export default function UserNavigator({ role }) {
         options={{ title: "Notices" }}
       />
       <Drawer.Screen 
-        name="Jobs" 
-        component={JobsScreen}
-        options={{ title: "Jobs" }}
+        name="JobsFormsScreen" 
+        component={JobsFormsScreen}
+        options={{ title: "Jobs & Forms" }}
       />
-      <Drawer.Screen 
+      {/* <Drawer.Screen 
         name="Forms" 
         component={FormsScreen}
         options={{ title: "Forms" }}
-      />
+      /> */}
       <Drawer.Screen 
         name="NoticeDetail" 
         component={NoticeDetailScreen}

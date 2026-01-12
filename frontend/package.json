@@ -6,6 +6,7 @@
     "start:expo": "CI=1 expo start --tunnel",
     "start:web": "CI=1 expo start --web",
     "start": "npx expo start -c",
+    "build_apk": "eas build -p android --profile preview",
     "dev": "EXPO_DEBUG=1 npx expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "npx expo start --android",

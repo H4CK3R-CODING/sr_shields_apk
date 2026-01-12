@@ -76,13 +76,8 @@ const CustomDrawerContent = ({ navigation, role }) => {
           },
           {
             iconName: "briefcase-outline",
-            label: "Jobs",
-            screen: "Jobs",
-          },
-          {
-            iconName: "briefcase-outline",
-            label: "Forms",
-            screen: "Forms",
+            label: "Jobs & Forms",
+            screen: "JobsFormsScreen",
           },
         ],
       },

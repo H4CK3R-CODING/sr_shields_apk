@@ -1,15 +1,15 @@
 // src/screens/User/NotificationsScreen.jsx
 import React, { useState, useEffect } from "react";
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
   RefreshControl,
   Modal,
   Alert,
   Animated,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../services/api";
@@ -34,7 +34,7 @@ export default function NotificationsScreen({ navigation }) {
   const fetchNotifications = async () => {
     try {
       const { data } = await api.get("/notifications/my-notifications");
-      
+
       if (data.success) {
         setNotifications(data.notifications || []);
         // If backend returns readNotifications array, use it
@@ -43,9 +43,9 @@ export default function NotificationsScreen({ navigation }) {
         }
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error("Error fetching notifications:", error);
       if (error.response?.status !== 401) {
-        Alert.alert('Error', 'Failed to load notifications. Please try again.');
+        Alert.alert("Error", "Failed to load notifications. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -67,12 +67,12 @@ export default function NotificationsScreen({ navigation }) {
   const markAsRead = async (notificationId) => {
     try {
       const { data } = await api.put(`/notifications/${notificationId}/read`);
-      
+
       if (data.success) {
         setReadNotifications([...readNotifications, notificationId]);
       }
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error("Error marking notification as read:", error);
     }
   };
 
@@ -82,16 +82,16 @@ export default function NotificationsScreen({ navigation }) {
 
     switch (filterType) {
       case "unread":
-        filtered = filtered.filter(n => !isRead(n._id));
+        filtered = filtered.filter((n) => !isRead(n._id));
         break;
       case "high":
-        filtered = filtered.filter(n => n.priority === "high");
+        filtered = filtered.filter((n) => n.priority === "high");
         break;
       case "normal":
-        filtered = filtered.filter(n => n.priority === "normal");
+        filtered = filtered.filter((n) => n.priority === "normal");
         break;
       case "low":
-        filtered = filtered.filter(n => n.priority === "low");
+        filtered = filtered.filter((n) => n.priority === "low");
         break;
       default:
         // all - no filter
@@ -106,17 +106,17 @@ export default function NotificationsScreen({ navigation }) {
   // Get counts for each filter
   const counts = {
     all: notifications.length,
-    unread: notifications.filter(n => !isRead(n._id)).length,
-    high: notifications.filter(n => n.priority === "high").length,
-    normal: notifications.filter(n => n.priority === "normal").length,
-    low: notifications.filter(n => n.priority === "low").length,
+    unread: notifications.filter((n) => !isRead(n._id)).length,
+    high: notifications.filter((n) => n.priority === "high").length,
+    normal: notifications.filter((n) => n.priority === "normal").length,
+    low: notifications.filter((n) => n.priority === "low").length,
   };
 
   // Handle notification tap
   const handleNotificationTap = async (notification) => {
     setSelectedNotification(notification);
     setModalVisible(true);
-    
+
     // Fade in animation
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -150,16 +150,16 @@ export default function NotificationsScreen({ navigation }) {
   const confirmMarkAllAsRead = async () => {
     try {
       // Mark all unread notifications as read
-      const unreadNotifications = notifications.filter(n => !isRead(n._id));
-      
+      const unreadNotifications = notifications.filter((n) => !isRead(n._id));
+
       for (const notification of unreadNotifications) {
         await markAsRead(notification._id);
       }
-      
+
       setMarkAllModalVisible(false);
       Alert.alert("Success", "All notifications marked as read");
     } catch (error) {
-      console.error('Error marking all as read:', error);
+      console.error("Error marking all as read:", error);
       Alert.alert("Error", "Failed to mark all as read");
       setMarkAllModalVisible(false);
     }
@@ -259,9 +259,9 @@ export default function NotificationsScreen({ navigation }) {
 
   return (
     <View className="flex-1 bg-gray-50 dark:bg-gray-900">
-      <CustomHeader 
-        title="Notifications" 
-        showBack 
+      <CustomHeader
+        title="Notifications"
+        showBack
         showMenu
         rightButton={
           counts.unread > 0 && (
@@ -304,8 +304,8 @@ export default function NotificationsScreen({ navigation }) {
 
       {/* Filter Tabs */}
       <View className="bg-white dark:bg-gray-800 px-4 py-3 shadow-sm">
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingRight: 16 }}
         >
@@ -331,9 +331,7 @@ export default function NotificationsScreen({ navigation }) {
               {tab.count > 0 && (
                 <View
                   className={`ml-2 rounded-full px-2 py-0.5 ${
-                    filterType === tab.key
-                      ? "bg-white/30"
-                      : "bg-blue-500"
+                    filterType === tab.key ? "bg-white/30" : "bg-blue-500"
                   }`}
                 >
                   <Text
@@ -394,7 +392,9 @@ export default function NotificationsScreen({ navigation }) {
                   {/* Header */}
                   <View className="flex-row items-start mb-3">
                     {/* Priority Icon */}
-                    <View className={`${colors.bg} w-12 h-12 rounded-xl items-center justify-center mr-3`}>
+                    <View
+                      className={`${colors.bg} w-12 h-12 rounded-xl items-center justify-center mr-3`}
+                    >
                       <Ionicons
                         name={getPriorityIcon(notification.priority)}
                         size={24}
@@ -407,7 +407,9 @@ export default function NotificationsScreen({ navigation }) {
                       {/* Priority Badge */}
                       <View className="flex-row items-center mb-2">
                         <View className={`${colors.bgLight} px-2 py-1 rounded`}>
-                          <Text className={`${colors.text} text-xs font-bold uppercase`}>
+                          <Text
+                            className={`${colors.text} text-xs font-bold uppercase`}
+                          >
                             {notification.priority}
                           </Text>
                         </View>
@@ -437,7 +439,11 @@ export default function NotificationsScreen({ navigation }) {
                     </View>
 
                     {/* Arrow */}
-                    <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color="#9CA3AF"
+                    />
                   </View>
 
                   {/* Footer */}
@@ -467,6 +473,7 @@ export default function NotificationsScreen({ navigation }) {
       </ScrollView>
 
       {/* Notification Detail Modal */}
+      {/* Notification Detail Modal */}
       {selectedNotification && (
         <Modal
           visible={modalVisible}
@@ -474,74 +481,157 @@ export default function NotificationsScreen({ navigation }) {
           transparent={true}
           onRequestClose={closeModal}
         >
-          <View className="flex-1 bg-black/70 justify-center items-center px-6">
+          <View className="flex-1 bg-black/80 justify-end sm:justify-center items-center">
             <Animated.View
               style={{ opacity: fadeAnim }}
-              className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
+              className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg overflow-hidden shadow-2xl"
             >
-              {/* Modal Header */}
-              <View className={`${getPriorityColor(selectedNotification.priority).bg} p-6 pb-4`}>
-                <View className="flex-row justify-between items-start mb-3">
-                  <View className="bg-white/20 w-14 h-14 rounded-xl items-center justify-center">
+              {/* Drag Handle (mobile) */}
+              <View className="sm:hidden items-center pt-2 pb-1">
+                <View className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+              </View>
+
+              {/* Modal Header with Gradient */}
+              <View
+                className={`${getPriorityColor(selectedNotification.priority).bg} p-6 pb-8 relative`}
+              >
+                {/* Decorative circles */}
+                <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
+                <View className="absolute -bottom-5 -left-5 w-32 h-32 bg-white/10 rounded-full" />
+
+                <View className="flex-row justify-between items-start mb-4 relative z-10">
+                  <View className="bg-white/30 backdrop-blur-sm w-16 h-16 rounded-2xl items-center justify-center shadow-lg">
                     <Ionicons
                       name={getPriorityIcon(selectedNotification.priority)}
-                      size={28}
+                      size={32}
                       color="white"
                     />
                   </View>
-                  <TouchableOpacity onPress={closeModal} className="p-2 -m-2">
+                  <TouchableOpacity
+                    onPress={closeModal}
+                    className="bg-white/20 backdrop-blur-sm w-10 h-10 rounded-full items-center justify-center"
+                    activeOpacity={0.7}
+                  >
                     <Ionicons name="close" size={24} color="white" />
                   </TouchableOpacity>
                 </View>
-                <View className="bg-white/20 px-3 py-1 rounded-full self-start mb-2">
-                  <Text className="text-white text-xs font-bold uppercase">
-                    {selectedNotification.priority} Priority
-                  </Text>
+
+                <View className="flex-row items-center space-x-2 relative z-10">
+                  <View className="bg-white/30 backdrop-blur-sm px-4 py-1.5 rounded-full">
+                    <Text className="text-white text-xs font-bold uppercase tracking-wide">
+                      {selectedNotification.priority}
+                    </Text>
+                  </View>
+                  <View className="bg-white/30 backdrop-blur-sm px-4 py-1.5 rounded-full">
+                    <Text className="text-white text-xs font-semibold">
+                      {getRelativeTime(selectedNotification.createdAt)}
+                    </Text>
+                  </View>
                 </View>
               </View>
 
               {/* Modal Body */}
-              <ScrollView className="max-h-96 p-6 bg-white dark:bg-gray-800">
-                <Text className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              <ScrollView className="max-h-96 px-6 pt-6 pb-4 bg-white dark:bg-gray-800">
+                {/* Title */}
+                <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
                   {selectedNotification.title}
                 </Text>
 
-                <Text className="text-gray-700 dark:text-gray-300 leading-6 mb-6">
+                {/* Message */}
+                <Text className="text-gray-700 dark:text-gray-300 text-base leading-7 mb-6">
                   {selectedNotification.message}
                 </Text>
 
-                {/* Metadata */}
-                <View className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-                  <View className="flex-row items-center mb-3">
-                    <Ionicons name="calendar-outline" size={16} color="#9CA3AF" />
-                    <Text className="text-gray-600 dark:text-gray-400 text-sm ml-2">
-                      {new Date(selectedNotification.createdAt).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
+                {/* Metadata Cards */}
+                <View className="flex-row space-x-3 mb-4">
+                  <View className="flex-1 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-4 border border-blue-200/50 dark:border-blue-700/30">
+                    <View className="flex-row items-center mb-2">
+                      <View className="bg-blue-500 w-8 h-8 rounded-lg items-center justify-center">
+                        <Ionicons name="calendar" size={16} color="white" />
+                      </View>
+                      <Text className="text-gray-500 dark:text-gray-400 text-xs ml-2 font-semibold uppercase tracking-wide">
+                        Date
+                      </Text>
+                    </View>
+                    <Text className="text-gray-800 dark:text-gray-200 text-sm font-bold">
+                      {new Date(
+                        selectedNotification.createdAt
+                      ).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </Text>
+                    <Text className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">
+                      {new Date(
+                        selectedNotification.createdAt
+                      ).toLocaleDateString("en-US", {
+                        year: "numeric",
                       })}
                     </Text>
                   </View>
-                  <View className="flex-row items-center">
-                    <Ionicons name="time-outline" size={16} color="#9CA3AF" />
-                    <Text className="text-gray-600 dark:text-gray-400 text-sm ml-2">
-                      {new Date(selectedNotification.createdAt).toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
+
+                  <View className="flex-1 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-4 border border-purple-200/50 dark:border-purple-700/30">
+                    <View className="flex-row items-center mb-2">
+                      <View className="bg-purple-500 w-8 h-8 rounded-lg items-center justify-center">
+                        <Ionicons name="time" size={16} color="white" />
+                      </View>
+                      <Text className="text-gray-500 dark:text-gray-400 text-xs ml-2 font-semibold uppercase tracking-wide">
+                        Time
+                      </Text>
+                    </View>
+                    <Text className="text-gray-800 dark:text-gray-200 text-sm font-bold">
+                      {new Date(
+                        selectedNotification.createdAt
+                      ).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                    <Text className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">
+                      {new Date(
+                        selectedNotification.createdAt
+                      ).toLocaleDateString("en-US", {
+                        weekday: "short",
                       })}
                     </Text>
                   </View>
                 </View>
+
+                {/* Status Badge */}
+                <View className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-4 border border-green-200/50 dark:border-green-700/30">
+                  <View className="flex-row items-center">
+                    <View className="bg-green-500 w-10 h-10 rounded-xl items-center justify-center">
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={24}
+                        color="white"
+                      />
+                    </View>
+                    <View className="ml-3 flex-1">
+                      <Text className="text-green-800 dark:text-green-300 font-bold text-sm">
+                        Notification Received
+                      </Text>
+                      <Text className="text-green-600 dark:text-green-400 text-xs mt-0.5">
+                        Successfully delivered to your device
+                      </Text>
+                    </View>
+                  </View>
+                </View>
               </ScrollView>
 
-              {/* Modal Footer */}
-              <View className="p-6 pt-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              {/* Modal Footer with Gradient Button */}
+              <View className="p-6 pt-4 bg-gray-50 dark:bg-gray-900/50">
                 <TouchableOpacity
                   onPress={closeModal}
-                  className="bg-blue-500 rounded-xl py-4 items-center"
+                  className={`${getPriorityColor(selectedNotification.priority).bg} rounded-2xl py-4 px-6 items-center shadow-lg`}
+                  activeOpacity={0.8}
                 >
-                  <Text className="text-white font-bold text-base">Got it</Text>
+                  <View className="flex-row items-center">
+                    <Text className="text-white font-bold text-base mr-2">
+                      Got it
+                    </Text>
+                    <Ionicons name="checkmark-circle" size={20} color="white" />
+                  </View>
                 </TouchableOpacity>
               </View>
             </Animated.View>
@@ -566,7 +656,8 @@ export default function NotificationsScreen({ navigation }) {
                 Mark All as Read
               </Text>
               <Text className="text-gray-600 dark:text-gray-400 text-center">
-                Are you sure you want to mark all {counts.unread} unread notifications as read?
+                Are you sure you want to mark all {counts.unread} unread
+                notifications as read?
               </Text>
             </View>
 

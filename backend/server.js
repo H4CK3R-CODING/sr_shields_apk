@@ -4,6 +4,13 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectToDB from "./config/connectToDB.js";
 import mainRouter from "./routes/index.js";
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
 
 // ✅ Load environment variables
 dotenv.config({ quiet: true });
@@ -21,6 +28,10 @@ app.use(
     credentials: true,
   })
 );
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // ✅ Routes
 app.use("/api/v1", mainRouter);

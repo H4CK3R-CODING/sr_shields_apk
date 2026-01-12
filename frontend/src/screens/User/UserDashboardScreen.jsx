@@ -1,22 +1,169 @@
 // src/screens/User/UserDashboardScreen.jsx
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  Dimensions,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import useContentStore from "../../state/contentStore";
+import { LinearGradient } from "expo-linear-gradient";
+import { api } from "../../services/api";
 import useAuthStore from "../../state/authStore";
-import CustomHeader from "../../components/CustomHeader";
+import NavLayout from "@/src/components/Navbar/NavLayout";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
+
+// Enhanced Stat Card Component
+const StatCard = ({ label, value, icon, colors, onPress }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    activeOpacity={0.8}
+    className="w-[48%] mb-4 rounded-2xl overflow-hidden shadow-lg"
+  >
+    <LinearGradient
+      colors={colors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      className="p-5"
+    >
+      {/* Icon Badge */}
+      <View className="bg-white/20 w-14 h-14 rounded-2xl items-center justify-center mb-3">
+        <Ionicons name={icon} size={28} color="white" />
+      </View>
+
+      {/* Value */}
+      <Text className="text-white font-bold text-3xl mb-1">
+        {value?.toLocaleString() || 0}
+      </Text>
+
+      {/* Label */}
+      <Text className="text-white/90 text-sm font-semibold mb-2">{label}</Text>
+    </LinearGradient>
+  </TouchableOpacity>
+);
+
+// Quick Action Card
+const QuickActionCard = ({ title, description, icon, colors, onPress }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    activeOpacity={0.8}
+    className="bg-white dark:bg-gray-800 rounded-2xl p-5 mb-3 shadow-md"
+  >
+    <View className="flex-row items-center">
+      <LinearGradient
+        colors={colors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        className="w-14 h-14 rounded-2xl items-center justify-center mr-4"
+      >
+        <Ionicons name={icon} size={26} color="white" />
+      </LinearGradient>
+
+      <View className="flex-1">
+        <Text className="text-gray-900 dark:text-white font-bold text-lg mb-1">
+          {title}
+        </Text>
+        <Text className="text-gray-600 dark:text-gray-400 text-sm">
+          {description}
+        </Text>
+      </View>
+
+      <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
+    </View>
+  </TouchableOpacity>
+);
+
+// Content Preview Card
+const ContentCard = ({ item, type, onPress, showBadge }) => {
+  const iconConfig = {
+    notification: { icon: "notifications", color: "#3B82F6" },
+    notice: { icon: "newspaper", color: "#10B981" },
+    job: { icon: "briefcase", color: "#8B5CF6" },
+  };
+
+  const config = iconConfig[type];
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-3 shadow-sm"
+      activeOpacity={0.7}
+    >
+      <View className="flex-row items-start">
+        <View
+          style={{ backgroundColor: config.color + "20" }}
+          className="w-12 h-12 rounded-xl items-center justify-center mr-3"
+        >
+          <Ionicons name={config.icon} size={22} color={config.color} />
+        </View>
+
+        <View className="flex-1">
+          <View className="flex-row items-center mb-1">
+            <Text className="text-base font-bold text-gray-800 dark:text-white flex-1">
+              {item.title}
+            </Text>
+            {showBadge && (
+              <View className="bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">
+                <Text className="text-red-600 dark:text-red-400 text-xs font-semibold">
+                  NEW
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <Text
+            className="text-gray-600 dark:text-gray-400 text-sm mb-2"
+            numberOfLines={2}
+          >
+            {item.message || item.description || item.organization}
+          </Text>
+
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center">
+              <Ionicons name="time-outline" size={14} color="#9CA3AF" />
+              <Text className="text-xs text-gray-400 ml-1">
+                {new Date(item.createdAt).toLocaleDateString()}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 export default function UserDashboardScreen({ navigation }) {
-  const { notifications, notices, jobs, forms, loadAllData } = useContentStore();
   const { user } = useAuthStore();
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+      totalUsers: 0,
+      totalJobs: 0,
+      totalForms: 0,
+      totalNotifications: 0,
+      activeJobs: 0,
+      activeForms: 0,
+      usersThisMonth: 0,
+      jobsThisMonth: 0,
+    },
+    recentActivities: [],
+  });
 
   useEffect(() => {
-    loadAllData();
-    
+    const initDashboard = async () => {
+      await fetchDashboardData();
+      setLoading(false);
+    };
+    initDashboard();
+
     // Update time every minute
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -25,20 +172,33 @@ export default function UserDashboardScreen({ navigation }) {
     return () => clearInterval(timer);
   }, []);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadAllData();
-    setRefreshing(false);
+  const fetchDashboardData = async () => {
+    try {
+      setRefreshing(true);
+
+      // Fetch dashboard stats from admin route (works for all users)
+      const { data } = await api.get("/admin/dashboard/stats");
+
+      if (data.success) {
+        setDashboardData({
+          stats: data.stats || {},
+          recentActivities: data.recentActivities || [],
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      if (error.response?.status !== 401) {
+        Alert.alert("Error", "Failed to load dashboard data");
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
-  // Calculate stats
-  const unreadNotifications = notifications.filter(n => !n.read).length;
-  const urgentNotifications = notifications.filter(n => n.priority === "high" && !n.read).length;
-  const recentJobs = jobs.filter(job => {
-    const jobDate = new Date(job.createdAt);
-    const daysDiff = (new Date() - jobDate) / (1000 * 60 * 60 * 24);
-    return daysDiff <= 7; // Jobs posted in last 7 days
-  }).length;
+  const onRefresh = () => {
+    fetchDashboardData();
+  };
 
   // Get greeting based on time
   const getGreeting = () => {
@@ -50,280 +210,239 @@ export default function UserDashboardScreen({ navigation }) {
 
   // Format date
   const formatDate = () => {
-    return currentTime.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return currentTime.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
-  // Quick access cards
-  const quickAccessCards = [
+  // Stats for cards
+  const dashboardStats = [
     {
-      title: "Notifications",
-      count: notifications.length,
-      unread: unreadNotifications,
+      label: "Notifications",
+      value: dashboardData.stats.totalNotifications,
       icon: "notifications",
-      gradient: ["#3B82F6", "#2563EB"],
-      color: "bg-blue-500",
-      screen: "Notifications",
-      description: urgentNotifications > 0 ? `${urgentNotifications} urgent` : "All up to date"
+      colors: ["#3B82F6", "#1D4ED8"],
+      onPress: () => navigation.navigate("Notifications"),
     },
     {
-      title: "Notices",
-      count: notices.length,
-      icon: "newspaper",
-      gradient: ["#10B981", "#059669"],
-      color: "bg-green-500",
-      screen: "Notices",
-      description: notices.length > 0 ? "View latest" : "No notices yet"
-    },
-    {
-      title: "Jobs",
-      count: jobs.length,
-      badge: recentJobs > 0 ? `${recentJobs} new` : null,
+      label: "Active Jobs",
+      value: dashboardData.stats.activeJobs,
       icon: "briefcase",
-      gradient: ["#8B5CF6", "#7C3AED"],
-      color: "bg-purple-500",
-      screen: "Jobs",
-      description: recentJobs > 0 ? `${recentJobs} this week` : "Browse openings"
+      colors: ["#8B5CF6", "#7C3AED"],
+      onPress: () => navigation.navigate("JobsFormsScreen"),
     },
     {
-      title: "Forms",
-      count: forms.length,
+      label: "Total Jobs",
+      value: dashboardData.stats.totalJobs,
+      icon: "briefcase-outline",
+      colors: ["#10B981", "#059669"],
+      onPress: () => navigation.navigate("JobsFormsScreen"),
+    },
+    {
+      label: "Forms",
+      value: dashboardData.stats.totalForms,
       icon: "document-text",
-      gradient: ["#F59E0B", "#D97706"],
-      color: "bg-orange-500",
-      screen: "Forms",
-      description: "Download & view"
+      colors: ["#F59E0B", "#D97706"],
+      onPress: () => navigation.navigate("JobsFormsScreen"),
     },
   ];
 
-  // Recent notices (latest 3)
-  const recentNotices = notices.slice(0, 3);
+  // Quick actions
+  const quickActions = [
+    {
+      title: "Download Forms",
+      description: "Access all available forms",
+      icon: "download",
+      colors: ["#F59E0B", "#D97706"],
+      onPress: () => navigation.navigate("JobsFormsScreen"),
+    },
+    {
+      title: "Browse Jobs",
+      description: "Explore job opportunities",
+      icon: "briefcase",
+      colors: ["#8B5CF6", "#6D28D9"],
+      onPress: () => navigation.navigate("JobsFormsScreen"),
+    },
+    {
+      title: "View Notifications",
+      description: "Check important updates",
+      icon: "notifications",
+      colors: ["#3B82F6", "#1D4ED8"],
+      onPress: () => navigation.navigate("Notifications"),
+    },
+    {
+      title: "My Profile",
+      description: "Update your information",
+      icon: "person",
+      colors: ["#10B981", "#059669"],
+      onPress: () => navigation.navigate("Profile"),
+    },
+  ];
 
-  // Featured/Latest jobs (latest 3)
-  const featuredJobs = jobs.slice(0, 3);
+  // Recent content from activities
+  const latestNotifications = dashboardData.recentActivities
+    .filter((activity) => activity.icon === "notifications" || activity.icon === "person-add")
+    .slice(0, 3)
+    .map((activity, index) => ({
+      _id: `activity-${index}`,
+      title: activity.title,
+      message: activity.description,
+      priority: "normal",
+      read: false,
+      createdAt: new Date(),
+    }));
 
-  // Latest unread notifications (latest 3)
-  const latestNotifications = notifications.filter(n => !n.read).slice(0, 3);
+  const featuredJobs = dashboardData.recentActivities
+    .filter((activity) => activity.icon === "briefcase")
+    .slice(0, 3)
+    .map((activity, index) => {
+      const parts = activity.description.split(" at ");
+      return {
+        _id: `job-${index}`,
+        title: parts[0] || activity.description,
+        organization: parts[1] || "Organization",
+        status: "active",
+        createdAt: new Date(),
+      };
+    });
+
+  // Activity stats
+  const readNotifications = 0;
+  const urgentNotifications = 0;
+
+  if (loading) {
+    return (
+      <NavLayout title="Dashboard" showAIChat={false}>
+        <View className="flex-1 justify-center items-center bg-gray-50 dark:bg-gray-900">
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text className="text-gray-500 dark:text-gray-400 mt-4 text-base">
+            Loading dashboard...
+          </Text>
+        </View>
+      </NavLayout>
+    );
+  }
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
-      <CustomHeader 
-        title="CSC Portal" 
-        showMenu 
-        rightButton={
-          <TouchableOpacity 
-            onPress={() => navigation.navigate("Profile")}
-            className="w-10 h-10 bg-blue-500 rounded-full items-center justify-center"
-          >
-            <Ionicons name="person" size={20} color="white" />
-          </TouchableOpacity>
-        }
-      />
-
-      <ScrollView 
-        className="flex-1"
+    <NavLayout title="CSC Portal" showAIChat={false}>
+      <ScrollView
+        className="flex-1 bg-gray-50 dark:bg-gray-900"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#3B82F6"]}
+          />
         }
       >
-        {/* Welcome Section with Date/Time */}
-        <View className="bg-white dark:bg-gray-800 px-6 py-6 mb-4 shadow-sm">
-          <Text className="text-3xl font-bold text-gray-800 dark:text-white mb-1">
-            {getGreeting()}!
-          </Text>
-          <Text className="text-base text-gray-600 dark:text-gray-400 mb-1">
-            {user?.name || "User"}
-          </Text>
-          <View className="flex-row items-center mt-2">
-            <Ionicons name="calendar-outline" size={14} color="#9CA3AF" />
-            <Text className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-              {formatDate()}
-            </Text>
+        {/* Welcome Header */}
+        <View className="bg-gradient-to-br from-blue-500 to-blue-600 px-6 pt-8 pb-10 rounded-b-3xl shadow-lg">
+          <View className="flex-row items-center justify-between mb-2">
+            <View>
+              <Text className="text-white/80 text-sm font-semibold">
+                {getGreeting()},
+              </Text>
+              <Text className="text-white text-2xl font-bold mt-1">
+                {user?.fullName || user?.name || "User"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Profile")}
+              className="bg-white/20 w-14 h-14 rounded-2xl items-center justify-center"
+            >
+              <Ionicons name="person" size={28} color="white" />
+            </TouchableOpacity>
           </View>
+          <Text className="text-white/90 text-sm mt-2">{formatDate()}</Text>
         </View>
 
-        {/* Quick Stats Banner */}
+        {/* Urgent Alert Banner */}
         {urgentNotifications > 0 && (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => navigation.navigate("Notifications")}
-            className="mx-6 mb-4 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg p-4"
+            className="mx-4 -mt-4 mb-4"
           >
-            <View className="flex-row items-center">
-              <View className="bg-red-500 w-10 h-10 rounded-full items-center justify-center mr-3">
-                <Ionicons name="alert-circle" size={22} color="white" />
+            <LinearGradient
+              colors={["#EF4444", "#DC2626"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="rounded-2xl p-4 shadow-lg"
+            >
+              <View className="flex-row items-center">
+                <View className="bg-white/20 w-12 h-12 rounded-xl items-center justify-center mr-3">
+                  <Ionicons name="alert-circle" size={24} color="white" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white font-bold text-base">
+                    {urgentNotifications} Urgent Notification
+                    {urgentNotifications > 1 ? "s" : ""}
+                  </Text>
+                  <Text className="text-white/90 text-sm">
+                    Requires your attention
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={24} color="white" />
               </View>
-              <View className="flex-1">
-                <Text className="text-red-800 dark:text-red-300 font-bold">
-                  {urgentNotifications} Urgent Notification{urgentNotifications > 1 ? 's' : ''}
-                </Text>
-                <Text className="text-red-600 dark:text-red-400 text-sm">
-                  Requires your attention
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#EF4444" />
-            </View>
+            </LinearGradient>
           </TouchableOpacity>
         )}
 
-        {/* Quick Access Cards Grid */}
-        <View className="px-6 mb-6">
-          <Text className="text-xl font-bold text-gray-800 dark:text-white mb-4">
-            Quick Access
-          </Text>
-          <View className="flex-row flex-wrap -mx-2">
-            {quickAccessCards.map((card, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => navigation.navigate(card.screen)}
-                className="w-1/2 px-2 mb-4"
-                activeOpacity={0.7}
-              >
-                <View className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
-                  {/* Card Header with Icon */}
-                  <View className={`${card.color} p-4 pb-3`}>
-                    <View className="flex-row justify-between items-start mb-2">
-                      <View className="bg-white/20 w-12 h-12 rounded-xl items-center justify-center">
-                        <Ionicons name={card.icon} size={24} color="white" />
-                      </View>
-                      {card.unread > 0 && (
-                        <View className="bg-red-500 rounded-full min-w-6 h-6 px-2 items-center justify-center">
-                          <Text className="text-white text-xs font-bold">
-                            {card.unread}
-                          </Text>
-                        </View>
-                      )}
-                      {card.badge && (
-                        <View className="bg-white/30 rounded-full px-2 py-1">
-                          <Text className="text-white text-xs font-semibold">
-                            {card.badge}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-
-                  {/* Card Body */}
-                  <View className="p-4">
-                    <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-1">
-                      {card.count}
-                    </Text>
-                    <Text className="text-gray-600 dark:text-gray-400 text-sm font-semibold mb-1">
-                      {card.title}
-                    </Text>
-                    <Text className="text-gray-500 dark:text-gray-500 text-xs">
-                      {card.description}
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
+        {/* Stats Grid */}
+        <View className="px-4 mt-2">
+          <View className="flex-row flex-wrap justify-between">
+            {dashboardStats.map((stat, index) => (
+              <StatCard key={index} {...stat} />
             ))}
           </View>
+        </View>
+
+        {/* Quick Actions Section */}
+        <View className="px-4 mt-4">
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="text-gray-900 dark:text-white font-bold text-xl">
+              Quick Actions
+            </Text>
+            <Ionicons name="apps" size={24} color="#9CA3AF" />
+          </View>
+
+          {quickActions.map((action, index) => (
+            <QuickActionCard key={index} {...action} />
+          ))}
         </View>
 
         {/* Latest Unread Notifications */}
         {latestNotifications.length > 0 && (
-          <View className="px-6 mb-6">
-            <View className="flex-row justify-between items-center mb-3">
-              <Text className="text-xl font-bold text-gray-800 dark:text-white">
+          <View className="px-4 mt-6">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-gray-900 dark:text-white font-bold text-xl">
                 Unread Notifications
               </Text>
-              <TouchableOpacity onPress={() => navigation.navigate("Notifications")}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("Notifications")}
+              >
                 <Text className="text-blue-500 font-semibold">View All</Text>
               </TouchableOpacity>
             </View>
             {latestNotifications.map((notification) => (
-              <TouchableOpacity
-                key={notification.id}
+              <ContentCard
+                key={notification._id}
+                item={notification}
+                type="notification"
                 onPress={() => navigation.navigate("Notifications")}
-                className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm border-l-4 border-blue-500"
-              >
-                <View className="flex-row items-start">
-                  <View className={`${
-                    notification.priority === 'high' ? 'bg-red-500' : 
-                    notification.priority === 'normal' ? 'bg-blue-500' : 'bg-gray-500'
-                  } w-10 h-10 rounded-full items-center justify-center mr-3`}>
-                    <Ionicons name="notifications" size={20} color="white" />
-                  </View>
-                  <View className="flex-1">
-                    <View className="flex-row items-center mb-1">
-                      <Text className="text-base font-bold text-gray-800 dark:text-white flex-1">
-                        {notification.title}
-                      </Text>
-                      {notification.priority === 'high' && (
-                        <View className="bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">
-                          <Text className="text-red-600 dark:text-red-400 text-xs font-semibold">
-                            URGENT
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text className="text-gray-600 dark:text-gray-400 text-sm" numberOfLines={2}>
-                      {notification.message}
-                    </Text>
-                    <Text className="text-xs text-gray-400 mt-2">
-                      {new Date(notification.createdAt).toLocaleString()}
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Recent Notices Section */}
-        {recentNotices.length > 0 && (
-          <View className="px-6 mb-6">
-            <View className="flex-row justify-between items-center mb-3">
-              <Text className="text-xl font-bold text-gray-800 dark:text-white">
-                Latest Notices
-              </Text>
-              <TouchableOpacity onPress={() => navigation.navigate("Notices")}>
-                <Text className="text-blue-500 font-semibold">View All</Text>
-              </TouchableOpacity>
-            </View>
-            {recentNotices.map((notice) => (
-              <TouchableOpacity
-                key={notice.id}
-                onPress={() => navigation.navigate("NoticeDetail", { notice })}
-                className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm"
-                activeOpacity={0.7}
-              >
-                <View className="flex-row items-start">
-                  <View className="bg-green-100 dark:bg-green-900/30 w-12 h-12 rounded-xl items-center justify-center mr-3">
-                    <Ionicons name="newspaper" size={24} color="#10B981" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-base font-bold text-gray-800 dark:text-white mb-1">
-                      {notice.title}
-                    </Text>
-                    <Text className="text-gray-600 dark:text-gray-400 text-sm mb-2" numberOfLines={2}>
-                      {notice.description}
-                    </Text>
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center">
-                        <Ionicons name="time-outline" size={14} color="#9CA3AF" />
-                        <Text className="text-xs text-gray-400 ml-1">
-                          {new Date(notice.createdAt).toLocaleDateString()}
-                        </Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
+                showBadge={false}
+              />
             ))}
           </View>
         )}
 
         {/* Featured Jobs Section */}
         {featuredJobs.length > 0 && (
-          <View className="px-6 mb-6">
-            <View className="flex-row justify-between items-center mb-3">
-              <Text className="text-xl font-bold text-gray-800 dark:text-white">
+          <View className="px-4 mt-6">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-gray-900 dark:text-white font-bold text-xl">
                 Latest Job Openings
               </Text>
               <TouchableOpacity onPress={() => navigation.navigate("Jobs")}>
@@ -331,149 +450,98 @@ export default function UserDashboardScreen({ navigation }) {
               </TouchableOpacity>
             </View>
             {featuredJobs.map((job) => (
-              <TouchableOpacity
-                key={job.id}
+              <ContentCard
+                key={job._id}
+                item={job}
+                type="job"
                 onPress={() => navigation.navigate("JobDetail", { job })}
-                className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm"
-                activeOpacity={0.7}
-              >
-                <View className="flex-row items-start mb-3">
-                  <View className="bg-purple-100 dark:bg-purple-900/30 w-12 h-12 rounded-xl items-center justify-center mr-3">
-                    <Ionicons name="briefcase" size={24} color="#8B5CF6" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-base font-bold text-gray-800 dark:text-white mb-1">
-                      {job.title}
-                    </Text>
-                    <Text className="text-purple-600 dark:text-purple-400 font-semibold text-sm">
-                      {job.company}
-                    </Text>
-                  </View>
-                  {recentJobs > 0 && (
-                    <View className="bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
-                      <Text className="text-green-600 dark:text-green-400 text-xs font-semibold">
-                        NEW
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                <View className="flex-row flex-wrap mb-3">
-                  <View className="flex-row items-center mr-4 mb-2">
-                    <Ionicons name="location" size={14} color="#9CA3AF" />
-                    <Text className="text-gray-600 dark:text-gray-400 text-xs ml-1">
-                      {job.location}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center mr-4 mb-2">
-                    <Ionicons name="time" size={14} color="#9CA3AF" />
-                    <Text className="text-gray-600 dark:text-gray-400 text-xs ml-1">
-                      {job.type}
-                    </Text>
-                  </View>
-                  {job.salary && (
-                    <View className="flex-row items-center mb-2">
-                      <Ionicons name="cash" size={14} color="#9CA3AF" />
-                      <Text className="text-gray-600 dark:text-gray-400 text-xs ml-1">
-                        {job.salary}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {job.deadline && (
-                  <View className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-2">
-                    <Text className="text-orange-600 dark:text-orange-400 text-xs">
-                      ⏰ Apply by: {job.deadline}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+                showBadge={dashboardData.stats.jobsThisMonth > 0}
+              />
             ))}
           </View>
         )}
 
-        {/* Quick Actions Footer */}
-        <View className="px-6 mb-8">
-          <Text className="text-xl font-bold text-gray-800 dark:text-white mb-3">
-            Quick Actions
-          </Text>
-          <View className="flex-row flex-wrap -mx-2">
-            <TouchableOpacity 
-              onPress={() => navigation.navigate("Forms")}
-              className="w-1/2 px-2 mb-3"
-            >
-              <View className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm flex-row items-center">
-                <View className="bg-orange-100 dark:bg-orange-900/30 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                  <Ionicons name="download" size={20} color="#F59E0B" />
-                </View>
-                <Text className="text-gray-800 dark:text-white font-semibold flex-1">
-                  Download Forms
-                </Text>
+        {/* Activity Status Card */}
+        <View className="px-4 mt-6 mb-6">
+          <View className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 shadow-lg">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-white font-bold text-lg">
+                Your Activity
+              </Text>
+              <View className="bg-white/20 px-3 py-1.5 rounded-full">
+                <Text className="text-white text-xs font-bold">ACTIVE</Text>
               </View>
-            </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity 
-              onPress={() => navigation.navigate("Help")}
-              className="w-1/2 px-2 mb-3"
-            >
-              <View className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm flex-row items-center">
-                <View className="bg-blue-100 dark:bg-blue-900/30 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                  <Ionicons name="help-circle" size={20} color="#3B82F6" />
+            <View className="flex-row justify-between">
+              <View className="items-center">
+                <View className="bg-white/20 w-12 h-12 rounded-xl items-center justify-center mb-2">
+                  <Ionicons name="checkmark-circle" size={24} color="white" />
                 </View>
-                <Text className="text-gray-800 dark:text-white font-semibold flex-1">
-                  Get Help
+                <Text className="text-white text-xs">Read</Text>
+                <Text className="text-white font-bold">
+                  {readNotifications}
                 </Text>
               </View>
-            </TouchableOpacity>
 
-            <TouchableOpacity 
-              onPress={() => navigation.navigate("Settings")}
-              className="w-1/2 px-2 mb-3"
-            >
-              <View className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm flex-row items-center">
-                <View className="bg-gray-100 dark:bg-gray-700 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                  <Ionicons name="settings" size={20} color="#6B7280" />
+              <View className="items-center">
+                <View className="bg-white/20 w-12 h-12 rounded-xl items-center justify-center mb-2">
+                  <Ionicons name="notifications" size={24} color="white" />
                 </View>
-                <Text className="text-gray-800 dark:text-white font-semibold flex-1">
-                  Settings
+                <Text className="text-white text-xs">Total</Text>
+                <Text className="text-white font-bold">
+                  {dashboardData.stats.totalNotifications}
                 </Text>
               </View>
-            </TouchableOpacity>
 
-            <TouchableOpacity 
-              onPress={() => navigation.navigate("Profile")}
-              className="w-1/2 px-2 mb-3"
-            >
-              <View className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm flex-row items-center">
-                <View className="bg-green-100 dark:bg-green-900/30 w-10 h-10 rounded-lg items-center justify-center mr-3">
-                  <Ionicons name="person" size={20} color="#10B981" />
+              <View className="items-center">
+                <View className="bg-white/20 w-12 h-12 rounded-xl items-center justify-center mb-2">
+                  <Ionicons name="briefcase" size={24} color="white" />
                 </View>
-                <Text className="text-gray-800 dark:text-white font-semibold flex-1">
-                  My Profile
+                <Text className="text-white text-xs">Jobs</Text>
+                <Text className="text-white font-bold">
+                  {dashboardData.stats.totalJobs}
                 </Text>
               </View>
-            </TouchableOpacity>
+
+              <View className="items-center">
+                <View className="bg-white/20 w-12 h-12 rounded-xl items-center justify-center mb-2">
+                  <Ionicons name="document" size={24} color="white" />
+                </View>
+                <Text className="text-white text-xs">Forms</Text>
+                <Text className="text-white font-bold">
+                  {dashboardData.stats.totalForms}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
 
         {/* Empty State */}
-        {notifications.length === 0 && notices.length === 0 && jobs.length === 0 && forms.length === 0 && (
-          <View className="px-6 mb-8">
-            <View className="bg-white dark:bg-gray-800 rounded-xl p-8 items-center shadow-sm">
-              <View className="bg-gray-100 dark:bg-gray-700 w-20 h-20 rounded-full items-center justify-center mb-4">
-                <Ionicons name="folder-open-outline" size={40} color="#9CA3AF" />
+        {dashboardData.stats.totalNotifications === 0 &&
+          dashboardData.stats.totalJobs === 0 &&
+          dashboardData.stats.totalForms === 0 && (
+            <View className="px-4 mb-8">
+              <View className="bg-white dark:bg-gray-800 rounded-2xl p-8 items-center shadow-sm">
+                <View className="bg-gray-100 dark:bg-gray-700 w-20 h-20 rounded-full items-center justify-center mb-4">
+                  <Ionicons
+                    name="folder-open-outline"
+                    size={40}
+                    color="#9CA3AF"
+                  />
+                </View>
+                <Text className="text-gray-800 dark:text-white font-bold text-lg mb-2">
+                  No Content Yet
+                </Text>
+                <Text className="text-gray-600 dark:text-gray-400 text-center">
+                  Check back later for notifications, jobs, and forms
+                </Text>
               </View>
-              <Text className="text-gray-800 dark:text-white font-bold text-lg mb-2">
-                No Content Yet
-              </Text>
-              <Text className="text-gray-600 dark:text-gray-400 text-center">
-                Check back later for notifications, notices, jobs, and forms
-              </Text>
             </View>
-          </View>
-        )}
+          )}
+
+        <View className="h-6" />
       </ScrollView>
-    </View>
+    </NavLayout>
   );
 }

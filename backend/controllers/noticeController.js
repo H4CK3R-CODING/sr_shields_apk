@@ -1,4 +1,4 @@
-// controllers/noticeController.js
+// controllers/noticeController.js - Updated with Google Drive Support
 import Notice from '../models/Notice.model.js';
 
 // Create notice (Admin only)
@@ -11,7 +11,8 @@ export const createNotice = async (req, res) => {
       priority,
       targetAudience,
       isPinned,
-      expiryDate
+      expiryDate,
+      attachments
     } = req.body;
 
     // Validation
@@ -22,6 +23,23 @@ export const createNotice = async (req, res) => {
       });
     }
 
+    // Validate attachments if provided
+    let processedAttachments = [];
+    if (attachments && Array.isArray(attachments)) {
+      processedAttachments = attachments.map(att => ({
+        name: att.name,
+        url: att.url || att.viewLink,
+        type: att.type || att.mimeType || 'application/octet-stream',
+        fileId: att.fileId || null,
+        viewLink: att.viewLink || att.url,
+        downloadLink: att.downloadLink || att.url,
+        previewLink: att.previewLink || null,
+        mimeType: att.mimeType || att.type || 'application/octet-stream',
+        source: att.source || 'server-upload',
+        size: att.size || null,
+      }));
+    }
+
     const notice = new Notice({
       title,
       description,
@@ -30,10 +48,14 @@ export const createNotice = async (req, res) => {
       targetAudience: targetAudience || 'all',
       isPinned: isPinned || false,
       expiryDate: expiryDate || null,
+      attachments: processedAttachments,
       createdBy: req.user.id
     });
 
     await notice.save();
+
+    // Populate creator info
+    await notice.populate('createdBy', 'fullName email');
 
     res.status(201).json({
       success: true,
@@ -168,9 +190,16 @@ export const getNoticeById = async (req, res) => {
     }
 
     // Increment view count and add user to viewedBy if not already viewed
-    if (!notice.viewedBy.includes(req.user.id)) {
+    const alreadyViewed = notice.viewedBy.some(
+      view => view.user.toString() === req.user.id.toString()
+    );
+
+    if (!alreadyViewed) {
       notice.views += 1;
-      notice.viewedBy.push(req.user.id);
+      notice.viewedBy.push({ 
+        user: req.user.id, 
+        viewedAt: new Date() 
+      });
       await notice.save();
     }
 
@@ -194,11 +223,27 @@ export const updateNotice = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
+    // Process attachments if provided
+    if (updates.attachments && Array.isArray(updates.attachments)) {
+      updates.attachments = updates.attachments.map(att => ({
+        name: att.name,
+        url: att.url || att.viewLink,
+        type: att.type || att.mimeType || 'application/octet-stream',
+        fileId: att.fileId || null,
+        viewLink: att.viewLink || att.url,
+        downloadLink: att.downloadLink || att.url,
+        previewLink: att.previewLink || null,
+        mimeType: att.mimeType || att.type || 'application/octet-stream',
+        source: att.source || 'server-upload',
+        size: att.size || null,
+      }));
+    }
+
     const notice = await Notice.findByIdAndUpdate(
       id,
       { ...updates },
       { new: true, runValidators: true }
-    );
+    ).populate('createdBy', 'fullName email');
 
     if (!notice) {
       return res.status(404).json({
@@ -309,6 +354,163 @@ export const deleteNotice = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting notice',
+      error: error.message
+    });
+  }
+};
+
+// Add attachment to notice (Admin only)
+export const addAttachment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { attachment } = req.body;
+
+    if (!attachment || !attachment.name || !attachment.url) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid attachment data'
+      });
+    }
+
+    const notice = await Notice.findById(id);
+
+    if (!notice) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notice not found'
+      });
+    }
+
+    const processedAttachment = {
+      name: attachment.name,
+      url: attachment.url || attachment.viewLink,
+      type: attachment.type || attachment.mimeType || 'application/octet-stream',
+      fileId: attachment.fileId || null,
+      viewLink: attachment.viewLink || attachment.url,
+      downloadLink: attachment.downloadLink || attachment.url,
+      previewLink: attachment.previewLink || null,
+      mimeType: attachment.mimeType || attachment.type || 'application/octet-stream',
+      source: attachment.source || 'server-upload',
+      size: attachment.size || null,
+    };
+
+    notice.attachments.push(processedAttachment);
+    await notice.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Attachment added successfully',
+      notice
+    });
+  } catch (error) {
+    console.error('Error adding attachment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error adding attachment',
+      error: error.message
+    });
+  }
+};
+
+// Remove attachment from notice (Admin only)
+export const removeAttachment = async (req, res) => {
+  try {
+    const { id, attachmentId } = req.params;
+
+    const notice = await Notice.findById(id);
+
+    if (!notice) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notice not found'
+      });
+    }
+
+    // Find and remove the attachment
+    const attachmentIndex = notice.attachments.findIndex(
+      att => att._id.toString() === attachmentId
+    );
+
+    if (attachmentIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Attachment not found'
+      });
+    }
+
+    notice.attachments.splice(attachmentIndex, 1);
+    await notice.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Attachment removed successfully',
+      notice
+    });
+  } catch (error) {
+    console.error('Error removing attachment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error removing attachment',
+      error: error.message
+    });
+  }
+};
+
+// Get notice statistics (Admin only)
+export const getNoticeStats = async (req, res) => {
+  try {
+    const stats = {
+      total: await Notice.countDocuments(),
+      active: await Notice.countDocuments({ isActive: true }),
+      inactive: await Notice.countDocuments({ isActive: false }),
+      pinned: await Notice.countDocuments({ isPinned: true }),
+      expired: await Notice.countDocuments({
+        expiryDate: { $lt: new Date() },
+        isActive: true
+      }),
+      byCategory: {},
+      byPriority: {},
+      totalViews: 0,
+      withAttachments: await Notice.countDocuments({ 
+        'attachments.0': { $exists: true } 
+      })
+    };
+
+    // Category breakdown
+    const categories = ['general', 'important', 'event', 'holiday', 'maintenance', 'announcement'];
+    for (const category of categories) {
+      stats.byCategory[category] = await Notice.countDocuments({ category });
+    }
+
+    // Priority breakdown
+    const priorities = ['low', 'normal', 'high', 'urgent'];
+    for (const priority of priorities) {
+      stats.byPriority[priority] = await Notice.countDocuments({ priority });
+    }
+
+    // Total views
+    const viewsAggregation = await Notice.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalViews: { $sum: '$views' }
+        }
+      }
+    ]);
+
+    if (viewsAggregation.length > 0) {
+      stats.totalViews = viewsAggregation[0].totalViews;
+    }
+
+    res.status(200).json({
+      success: true,
+      stats
+    });
+  } catch (error) {
+    console.error('Error fetching notice stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching statistics',
       error: error.message
     });
   }
