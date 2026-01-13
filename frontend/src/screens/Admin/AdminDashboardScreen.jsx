@@ -28,6 +28,7 @@ const StatCard = ({ label, value, icon, colors, trend, onPress }) => (
       colors={colors}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
+      
       className="p-5"
     >
       {/* Icon Badge */}
@@ -250,7 +251,13 @@ export default function AdminDashboardScreen({ navigation }) {
         }
       >
         {/* Welcome Header */}
-        <View className="bg-gradient-to-br from-blue-500 to-blue-600 px-6 pt-8 pb-10 rounded-b-3xl shadow-lg">
+        <LinearGradient
+          colors={["#3B82F6", "#2563EB"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
+          className="px-6 pt-8 pb-10 rounded-b-3xl shadow-lg"
+        >
           <View className="flex-row items-center justify-between mb-2">
             <View>
               <Text className="text-white/80 text-sm font-semibold">
@@ -272,7 +279,7 @@ export default function AdminDashboardScreen({ navigation }) {
               day: "numeric",
             })}
           </Text>
-        </View>
+        </LinearGradient>
 
         {/* Stats Grid */}
         <View className="px-4 -mt-6">
@@ -333,7 +340,17 @@ export default function AdminDashboardScreen({ navigation }) {
 
         {/* System Health Card */}
         <View className="px-4 mb-6">
-          <View className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 shadow-lg">
+          <LinearGradient
+            colors={["#10B981", "#059669"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 16,
+              padding: 24,
+              elevation: 5, // Android shadow
+            }}
+            className="rounded-2xl p-6 shadow-lg"
+          >
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-white font-bold text-lg">
                 System Health
@@ -376,7 +393,7 @@ export default function AdminDashboardScreen({ navigation }) {
                 <Text className="text-white font-bold">Daily</Text>
               </View>
             </View>
-          </View>
+          </LinearGradient>
         </View>
 
         <View className="h-6" />

@@ -2,11 +2,10 @@
 import { z } from "zod";
 
 const contactAuth = z.object({
-  name: z
-    .string({ required_error: "Name is required" })
-    .min(2, { message: "Name must be at least 2 characters long" })
-    .max(50, { message: "Name must be at most 50 characters long" }),
-  
+  subject: z
+    .string({ required_error: "Subject is required" })
+    .min(2, { message: "Subject must be at least 2 characters long" })
+    .max(50, { message: "Subject must be at most 50 characters long" }),
   email: z
     .string({ required_error: "Email is required" })
     .email({ message: "Invalid email address" }),

@@ -4,11 +4,12 @@ import contactAuth from "../zod/contactAuth.js";
 
 export const contactForm = async (req, res) => {
   try {
-    const { name, email, message } = req.body;
+    const { subject, email, message } = req.body;
 
     // Validate request body using Zod
     const { success, error } = contactAuth.safeParse(req.body);
     if (!success || error) {
+      console.error("Validation Error in contactForm:", error);
       return res.status(400).json({
         msg: "Invalid input data",
         error: error,
@@ -16,7 +17,7 @@ export const contactForm = async (req, res) => {
     }
 
     // Email subject and HTML message
-    const subject = "Query Regarding";
+    // const subject = "Query Regarding";
     const htmlMessage = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 30px auto; padding: 30px; border-radius: 6px; border: 1px solid #ddd; background-color: #ffffff;">
         <h2 style="color: #2c3e50; margin-top: 0;">User Query Submission</h2>
@@ -24,8 +25,8 @@ export const contactForm = async (req, res) => {
         <p style="font-size: 16px; color: #333;">You have received a new query from a user. Below are the details:</p>
         <table style="width: 100%; border-collapse: collapse; font-size: 16px; color: #333; margin: 20px 0;">
           <tr>
-            <td style="padding: 10px; font-weight: bold;">Name:</td>
-            <td style="padding: 10px;">${name}</td>
+            <td style="padding: 10px; font-weight: bold;">subject:</td>
+            <td style="padding: 10px;">${subject}</td>
           </tr>
           <tr style="background-color: #f9f9f9;">
             <td style="padding: 10px; font-weight: bold;">Email:</td>

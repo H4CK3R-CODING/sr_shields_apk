@@ -284,7 +284,10 @@ export default function UserDashboardScreen({ navigation }) {
 
   // Recent content from activities
   const latestNotifications = dashboardData.recentActivities
-    .filter((activity) => activity.icon === "notifications" || activity.icon === "person-add")
+    .filter(
+      (activity) =>
+        activity.icon === "notifications" || activity.icon === "person-add"
+    )
     .slice(0, 3)
     .map((activity, index) => ({
       _id: `activity-${index}`,
@@ -339,7 +342,13 @@ export default function UserDashboardScreen({ navigation }) {
         }
       >
         {/* Welcome Header */}
-        <View className="bg-gradient-to-br from-blue-500 to-blue-600 px-6 pt-8 pb-10 rounded-b-3xl shadow-lg">
+        <LinearGradient
+          colors={["#3B82F6", "#2563EB"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
+          className="px-6 pt-8 pb-10 rounded-b-3xl shadow-lg"
+        >
           <View className="flex-row items-center justify-between mb-2">
             <View>
               <Text className="text-white/80 text-sm font-semibold">
@@ -357,7 +366,7 @@ export default function UserDashboardScreen({ navigation }) {
             </TouchableOpacity>
           </View>
           <Text className="text-white/90 text-sm mt-2">{formatDate()}</Text>
-        </View>
+        </LinearGradient>
 
         {/* Urgent Alert Banner */}
         {urgentNotifications > 0 && (
@@ -391,7 +400,7 @@ export default function UserDashboardScreen({ navigation }) {
         )}
 
         {/* Stats Grid */}
-        <View className="px-4 mt-2">
+        <View className="px-4 -mt-6">
           <View className="flex-row flex-wrap justify-between">
             {dashboardStats.map((stat, index) => (
               <StatCard key={index} {...stat} />
@@ -462,8 +471,19 @@ export default function UserDashboardScreen({ navigation }) {
         )}
 
         {/* Activity Status Card */}
+
         <View className="px-4 mt-6 mb-6">
-          <View className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 shadow-lg">
+          <LinearGradient
+            colors={["#10B981", "#059669"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 16,
+              padding: 24,
+              elevation: 5, // Android shadow
+            }}
+            className="rounded-2xl p-6 shadow-lg"
+          >
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-white font-bold text-lg">
                 Your Activity
@@ -514,7 +534,7 @@ export default function UserDashboardScreen({ navigation }) {
                 </Text>
               </View>
             </View>
-          </View>
+          </LinearGradient>
         </View>
 
         {/* Empty State */}

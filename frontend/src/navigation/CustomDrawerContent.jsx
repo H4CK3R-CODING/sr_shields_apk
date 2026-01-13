@@ -111,7 +111,7 @@ const CustomDrawerContent = ({ navigation, role }) => {
       {
         section: "MAIN",
         items: [
-          { iconName: "home-outline", label: "Dashboard", screen: "Dashboard" },
+          { iconName: "home-outline", label: "Dashboard", screen: "AdminDashboard" },
           {
             iconName: "notifications-outline",
             label: "Manage Notifications",
@@ -137,6 +137,11 @@ const CustomDrawerContent = ({ navigation, role }) => {
             iconName: "settings-outline",
             label: "Settings",
             screen: "Settings",
+          },
+          {
+            iconName: "person-outline",
+            label: "Profile",
+            screen: "Profile",
           },
           {
             iconName: "log-out-outline",

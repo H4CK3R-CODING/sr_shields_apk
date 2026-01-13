@@ -72,7 +72,7 @@ export default function UserNavigator({ role }) {
       /> */}
       <Drawer.Screen name="Profile" component={ProfileScreen} />
       <Drawer.Screen name="Settings" component={SettingsScreen} />
-      <Drawer.Screen name="Help" component={HelpSupportScreen} />
+      <Drawer.Screen name="HelpSupport" component={HelpSupportScreen} />
     </Drawer.Navigator>
   );
 }

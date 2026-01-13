@@ -3,15 +3,17 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, DrawerActions } from "@react-navigation/native";
+import ThemeToggle from "./ThemeToggle";
 
 export default function CustomHeader({ 
   title, 
   showBack = false, 
   showMenu = false,
-  rightButton = null 
+  rightButton = <ThemeToggle />,
+  // navigation,
 }) {
   const navigation = useNavigation();
-
+  
   return (
     <View className="bg-white dark:bg-gray-800 px-4 py-4 flex-row items-center justify-between shadow-sm">
       {/* Left Side */}

@@ -1,9 +1,20 @@
 // src/screens/Admin/ManageNotificationsScreen.jsx
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Alert, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  Alert,
+  ActivityIndicator,
+  Platform,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../services/api"; // Adjust path according to your project structure
 import CustomHeader from "../../components/CustomHeader";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function ManageNotificationsScreen() {
   const [notifications, setNotifications] = useState([]);
@@ -28,11 +39,14 @@ export default function ManageNotificationsScreen() {
       if (data.success) {
         setNotifications(data.notifications);
       } else {
-        Alert.alert('Error', data.message || 'Failed to fetch notifications');
+        Alert.alert("Error", data.message || "Failed to fetch notifications");
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to fetch notifications');
+      console.error("Error fetching notifications:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to fetch notifications"
+      );
     } finally {
       setRefreshing(false);
     }
@@ -54,22 +68,30 @@ export default function ManageNotificationsScreen() {
 
       if (data.success) {
         Alert.alert(
-          "Success", 
+          "Success",
           `Notification sent to ${data.recipientCount} users!`,
-          [{ text: "OK", onPress: () => {
-            setTitle("");
-            setMessage("");
-            setPriority("normal");
-            setModalVisible(false);
-            fetchNotifications();
-          }}]
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                setTitle("");
+                setMessage("");
+                setPriority("normal");
+                setModalVisible(false);
+                fetchNotifications();
+              },
+            },
+          ]
         );
       } else {
-        Alert.alert('Error', data.message || 'Failed to create notification');
+        Alert.alert("Error", data.message || "Failed to create notification");
       }
     } catch (error) {
-      console.error('Error creating notification:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to create notification');
+      console.error("Error creating notification:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to create notification"
+      );
     } finally {
       setLoading(false);
     }
@@ -82,19 +104,24 @@ export default function ManageNotificationsScreen() {
 
   const confirmDelete = async () => {
     if (!notificationToDelete) return;
-    
+
     try {
-      const { data } = await api.delete(`/notifications/${notificationToDelete}`);
+      const { data } = await api.delete(
+        `/notifications/${notificationToDelete}`
+      );
 
       if (data.success) {
-        Alert.alert('Success', 'Notification deleted successfully');
+        Alert.alert("Success", "Notification deleted successfully");
         fetchNotifications();
       } else {
-        Alert.alert('Error', data.message || 'Failed to delete notification');
+        Alert.alert("Error", data.message || "Failed to delete notification");
       }
     } catch (error) {
-      console.error('Error deleting notification:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to delete notification');
+      console.error("Error deleting notification:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to delete notification"
+      );
     } finally {
       setDeleteModalVisible(false);
       setNotificationToDelete(null);
@@ -108,10 +135,14 @@ export default function ManageNotificationsScreen() {
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case "high": return "bg-red-500";
-      case "normal": return "bg-blue-500";
-      case "low": return "bg-gray-500";
-      default: return "bg-blue-500";
+      case "high":
+        return "bg-red-500";
+      case "normal":
+        return "bg-blue-500";
+      case "low":
+        return "bg-gray-500";
+      default:
+        return "bg-blue-500";
     }
   };
 
@@ -119,7 +150,7 @@ export default function ManageNotificationsScreen() {
     <View className="flex-1 bg-gray-50 dark:bg-gray-900">
       <CustomHeader title="Manage Notifications" showBack showMenu />
 
-      <ScrollView 
+      <ScrollView
         className="flex-1 px-4 py-4"
         refreshing={refreshing}
         onRefresh={fetchNotifications}
@@ -130,7 +161,9 @@ export default function ManageNotificationsScreen() {
           className="bg-blue-500 rounded-lg p-4 mb-4 flex-row items-center justify-center"
         >
           <Ionicons name="add-circle" size={24} color="white" />
-          <Text className="text-white font-semibold ml-2">Post New Notification</Text>
+          <Text className="text-white font-semibold ml-2">
+            Post New Notification
+          </Text>
         </TouchableOpacity>
 
         {/* Notifications List */}
@@ -157,7 +190,9 @@ export default function ManageNotificationsScreen() {
               <View className="flex-row justify-between items-start mb-2">
                 <View className="flex-1">
                   <View className="flex-row items-center mb-1">
-                    <View className={`${getPriorityColor(notification.priority)} px-2 py-1 rounded`}>
+                    <View
+                      className={`${getPriorityColor(notification.priority)} px-2 py-1 rounded`}
+                    >
                       <Text className="text-white text-xs font-semibold uppercase">
                         {notification.priority}
                       </Text>
@@ -167,7 +202,9 @@ export default function ManageNotificationsScreen() {
                     {notification.title}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => handleDelete(notification._id)}>
+                <TouchableOpacity
+                  onPress={() => handleDelete(notification._id)}
+                >
                   <Ionicons name="trash" size={20} color="#EF4444" />
                 </TouchableOpacity>
               </View>
@@ -190,8 +227,12 @@ export default function ManageNotificationsScreen() {
         onRequestClose={() => setModalVisible(false)}
       >
         <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white dark:bg-gray-800 rounded-t-3xl p-6">
-            <View className="flex-row justify-between items-center mb-4">
+          <View
+            className="bg-white dark:bg-gray-800 rounded-t-3xl"
+            style={{ maxHeight: "85%" }}
+          >
+            {/* Fixed Header */}
+            <View className="flex-row justify-between items-center p-6 pb-4 border-b border-gray-200 dark:border-gray-700">
               <Text className="text-xl font-bold text-gray-800 dark:text-white">
                 New Notification
               </Text>
@@ -200,57 +241,76 @@ export default function ManageNotificationsScreen() {
               </TouchableOpacity>
             </View>
 
-            <TextInput
-              placeholder="Notification Title"
-              value={title}
-              onChangeText={setTitle}
-              className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-3 text-gray-800 dark:text-white"
-              placeholderTextColor="#9CA3AF"
-            />
-
-            <TextInput
-              placeholder="Message"
-              value={message}
-              onChangeText={setMessage}
-              multiline
-              numberOfLines={4}
-              className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-3 text-gray-800 dark:text-white"
-              placeholderTextColor="#9CA3AF"
-              style={{ textAlignVertical: 'top' }}
-            />
-
-            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
-              Priority
-            </Text>
-            <View className="flex-row mb-4">
-              {["high", "normal", "low"].map((p) => (
-                <TouchableOpacity
-                  key={p}
-                  onPress={() => setPriority(p)}
-                  className={`flex-1 mr-2 p-3 rounded-lg ${
-                    priority === p ? "bg-blue-500" : "bg-gray-200 dark:bg-gray-700"
-                  }`}
-                >
-                  <Text className={`text-center font-semibold ${
-                    priority === p ? "text-white" : "text-gray-700 dark:text-gray-300"
-                  }`}>
-                    {p.charAt(0).toUpperCase() + p.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TouchableOpacity
-              onPress={handleAddNotification}
-              disabled={loading}
-              className="bg-blue-500 rounded-lg p-4 items-center"
+            {/* Scrollable Content */}
+            <KeyboardAwareScrollView
+              enableOnAndroid
+              keyboardShouldPersistTaps="handled"
+              extraScrollHeight={Platform.OS === "ios" ? 20 : 40}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={{ paddingBottom: 20 }}
             >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text className="text-white font-semibold">Post Notification</Text>
-              )}
-            </TouchableOpacity>
+              <View className="px-6 pt-4">
+                <TextInput
+                  placeholder="Notification Title"
+                  value={title}
+                  onChangeText={setTitle}
+                  className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-3 text-gray-800 dark:text-white"
+                  placeholderTextColor="#9CA3AF"
+                />
+
+                <TextInput
+                  placeholder="Message"
+                  value={message}
+                  onChangeText={setMessage}
+                  multiline
+                  numberOfLines={4}
+                  className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-3 text-gray-800 dark:text-white"
+                  placeholderTextColor="#9CA3AF"
+                  style={{ textAlignVertical: "top" }}
+                />
+
+                <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+                  Priority
+                </Text>
+                <View className="flex-row mb-4">
+                  {["high", "normal", "low"].map((p) => (
+                    <TouchableOpacity
+                      key={p}
+                      onPress={() => setPriority(p)}
+                      className={`flex-1 mr-2 p-3 rounded-lg ${
+                        priority === p
+                          ? "bg-blue-500"
+                          : "bg-gray-200 dark:bg-gray-700"
+                      }`}
+                    >
+                      <Text
+                        className={`text-center font-semibold ${
+                          priority === p
+                            ? "text-white"
+                            : "text-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        {p.charAt(0).toUpperCase() + p.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleAddNotification}
+                  disabled={loading}
+                  className="bg-blue-500 rounded-lg p-4 items-center"
+                >
+                  {loading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text className="text-white font-semibold">
+                      Post Notification
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </KeyboardAwareScrollView>
           </View>
         </View>
       </Modal>
@@ -272,7 +332,8 @@ export default function ManageNotificationsScreen() {
                 Delete Notification
               </Text>
               <Text className="text-gray-600 dark:text-gray-400 text-center">
-                Are you sure you want to delete this notification? This action cannot be undone.
+                Are you sure you want to delete this notification? This action
+                cannot be undone.
               </Text>
             </View>
 

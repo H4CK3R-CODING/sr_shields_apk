@@ -18,6 +18,7 @@ import * as DocumentPicker from "expo-document-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "../../services/api";
 import CustomHeader from "../../components/CustomHeader";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 // Stat Card Component
 const StatCard = ({ label, value, color, icon }) => (
@@ -42,7 +43,7 @@ const StatCard = ({ label, value, color, icon }) => (
   </View>
 );
 
-export default function ManageJobsFormsScreen({ navigation }) {
+export default function ManageJobsFormsScreen() {
   const [activeTab, setActiveTab] = useState("jobs");
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState({});
@@ -907,533 +908,572 @@ export default function ManageJobsFormsScreen({ navigation }) {
       </ScrollView>
 
       {/* Enhanced Create/Edit Modal */}
-      <Modal visible={modalVisible} animationType="none" transparent={true}>
-        <View className="flex-1 justify-end bg-black/70">
-          <Animated.View
-            style={{
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-              maxHeight: "95%",
+     <Modal visible={modalVisible} animationType="none" transparent={true}>
+  <View className="flex-1 justify-end bg-black/70">
+    <Animated.View
+      style={{
+        opacity: fadeAnim,
+        transform: [{ translateY: slideAnim }],
+        maxHeight: "95%",
+      }}
+      className="bg-white dark:bg-gray-900 rounded-t-3xl overflow-hidden"
+    >
+      {/* Drag Indicator */}
+      <View className="items-center py-3 bg-white dark:bg-gray-900">
+        <View className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full" />
+      </View>
+
+      {/* Enhanced Header - Fixed */}
+      <View className="bg-blue-500 px-6 py-5">
+        <View className="flex-row justify-between items-center">
+          <View className="flex-1">
+            <Text className="text-white text-2xl font-bold mb-1">
+              {editMode ? "Edit" : "Create"}{" "}
+              {activeTab === "jobs" ? "Job" : "Form"}
+            </Text>
+            <Text className="text-blue-100 text-sm">
+              Fill in the details below
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              Animated.parallel([
+                Animated.timing(fadeAnim, {
+                  toValue: 0,
+                  duration: 200,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(slideAnim, {
+                  toValue: 50,
+                  duration: 200,
+                  useNativeDriver: true,
+                }),
+              ]).start(() => setModalVisible(false));
             }}
-            className="bg-white dark:bg-gray-900 rounded-t-3xl overflow-hidden"
+            className="bg-white/20 w-10 h-10 rounded-full items-center justify-center"
           >
-            {/* Drag Indicator */}
-            <View className="items-center py-3 bg-white dark:bg-gray-900">
-              <View className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full" />
-            </View>
+            <Ionicons name="close" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-            {/* Enhanced Header */}
-            <View className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-5">
-              <View className="flex-row justify-between items-center">
-                <View className="flex-1">
-                  <Text className="text-white text-2xl font-bold mb-1">
-                    {editMode ? "Edit" : "Create"}{" "}
-                    {activeTab === "jobs" ? "Job" : "Form"}
-                  </Text>
-                  <Text className="text-blue-100 text-sm">
-                    Fill in the details below
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    Animated.parallel([
-                      Animated.timing(fadeAnim, {
-                        toValue: 0,
-                        duration: 200,
-                        useNativeDriver: true,
-                      }),
-                      Animated.timing(slideAnim, {
-                        toValue: 50,
-                        duration: 200,
-                        useNativeDriver: true,
-                      }),
-                    ]).start(() => setModalVisible(false));
-                  }}
-                  className="bg-white/20 w-10 h-10 rounded-full items-center justify-center"
-                >
-                  <Ionicons name="close" size={24} color="white" />
-                </TouchableOpacity>
-              </View>
-            </View>
+      {/* Scrollable Content */}
+      <KeyboardAwareScrollView
+        enableOnAndroid
+        keyboardShouldPersistTaps="handled"
+        extraScrollHeight={Platform.OS === "ios" ? 20 : 40}
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
+        <View className="bg-white dark:bg-gray-900 px-6 py-6">
+          {/* Title */}
+          <View className="mb-5">
+            <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
+              Title <Text className="text-red-500">*</Text>
+            </Text>
+            <TextInput
+              placeholder={`Enter ${activeTab === "jobs" ? "job" : "form"} title`}
+              value={title}
+              onChangeText={setTitle}
+              className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base"
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
 
-            <ScrollView
-              className="bg-white dark:bg-gray-900 px-6 py-6"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Title */}
+          {/* Description */}
+          <View className="mb-5">
+            <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
+              Description <Text className="text-red-500">*</Text>
+            </Text>
+            <TextInput
+              placeholder={`Enter ${activeTab === "jobs" ? "job" : "form"} description`}
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={4}
+              className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base"
+              placeholderTextColor="#9CA3AF"
+              style={{ textAlignVertical: "top", minHeight: 100 }}
+            />
+          </View>
+
+          {/* Job Specific Fields */}
+          {activeTab === "jobs" && (
+            <>
               <View className="mb-5">
                 <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
-                  Title <Text className="text-red-500">*</Text>
+                  Organization <Text className="text-red-500">*</Text>
                 </Text>
                 <TextInput
-                  placeholder={`Enter ${activeTab === "jobs" ? "job" : "form"} title`}
-                  value={title}
-                  onChangeText={setTitle}
-                  className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base border-2 border-transparent focus:border-blue-500"
+                  placeholder="Enter organization name"
+                  value={organization}
+                  onChangeText={setOrganization}
+                  className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base"
                   placeholderTextColor="#9CA3AF"
                 />
               </View>
 
-              {/* Description */}
-              <View className="mb-5">
-                <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
-                  Description <Text className="text-red-500">*</Text>
-                </Text>
-                <TextInput
-                  placeholder={`Enter ${activeTab === "jobs" ? "job" : "form"} description`}
-                  value={description}
-                  onChangeText={setDescription}
-                  multiline
-                  numberOfLines={4}
-                  className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base border-2 border-transparent focus:border-blue-500"
-                  placeholderTextColor="#9CA3AF"
-                  style={{ textAlignVertical: "top", minHeight: 100 }}
-                />
-              </View>
-
-              {/* Job Specific Fields */}
-              {activeTab === "jobs" && (
-                <>
-                  <View className="mb-5">
-                    <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
-                      Organization <Text className="text-red-500">*</Text>
-                    </Text>
-                    <TextInput
-                      placeholder="Enter organization name"
-                      value={organization}
-                      onChangeText={setOrganization}
-                      className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base border-2 border-transparent focus:border-blue-500"
-                      placeholderTextColor="#9CA3AF"
-                    />
-                  </View>
-
-                  <View className="flex-row gap-3 mb-5">
-                    <View className="flex-1">
-                      <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
-                        Location
-                      </Text>
-                      <TextInput
-                        placeholder="City, State"
-                        value={location}
-                        onChangeText={setLocation}
-                        className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base"
-                        placeholderTextColor="#9CA3AF"
-                      />
-                    </View>
-
-                    <View className="flex-1">
-                      <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
-                        Experience
-                      </Text>
-                      <TextInput
-                        placeholder="e.g., 2-5 years"
-                        value={experience}
-                        onChangeText={setExperience}
-                        className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base"
-                        placeholderTextColor="#9CA3AF"
-                      />
-                    </View>
-                  </View>
-
-                  <View className="mb-5">
-                    <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
-                      Salary Range
-                    </Text>
-                    <TextInput
-                      placeholder="e.g., ₹30,000 - ₹50,000"
-                      value={salary}
-                      onChangeText={setSalary}
-                      className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base"
-                      placeholderTextColor="#9CA3AF"
-                    />
-                  </View>
-                </>
-              )}
-
-              {/* Category */}
-              <View className="mb-5">
-                <Text className="text-gray-700 dark:text-gray-300 font-bold mb-3 text-base">
-                  Category
-                </Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  className="mb-2"
-                >
-                  {categories.map((cat) => (
-                    <TouchableOpacity
-                      key={cat.key}
-                      onPress={() => setCategory(cat.key)}
-                      style={{
-                        backgroundColor:
-                          category === cat.key ? cat.color : undefined,
-                      }}
-                      className={`mr-3 px-5 py-3 rounded-xl flex-row items-center ${
-                        category !== cat.key
-                          ? "bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700"
-                          : "shadow-lg"
-                      }`}
-                    >
-                      <Ionicons
-                        name={cat.icon}
-                        size={18}
-                        color={category === cat.key ? "white" : "#9CA3AF"}
-                      />
-                      <Text
-                        className={`ml-2 font-bold ${
-                          category === cat.key
-                            ? "text-white"
-                            : "text-gray-700 dark:text-gray-300"
-                        }`}
-                      >
-                        {cat.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-
-              {/* Status & Deadline */}
               <View className="flex-row gap-3 mb-5">
                 <View className="flex-1">
                   <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
-                    Status
+                    Location
                   </Text>
-                  <View className="bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden">
-                    <TouchableOpacity
-                      onPress={() => setStatus("active")}
-                      className={`p-4 flex-row items-center ${status === "active" ? "bg-green-500" : ""}`}
-                    >
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={20}
-                        color={status === "active" ? "white" : "#10B981"}
-                      />
-                      <Text
-                        className={`ml-2 font-semibold ${status === "active" ? "text-white" : "text-gray-700 dark:text-gray-300"}`}
-                      >
-                        Active
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  <TextInput
+                    placeholder="City, State"
+                    value={location}
+                    onChangeText={setLocation}
+                    className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base"
+                    placeholderTextColor="#9CA3AF"
+                  />
                 </View>
 
                 <View className="flex-1">
                   <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
-                    Deadline
+                    Experience
                   </Text>
                   <TextInput
-                    placeholder="YYYY-MM-DD"
-                    value={deadline}
-                    onChangeText={setDeadline}
+                    placeholder="e.g., 2-5 years"
+                    value={experience}
+                    onChangeText={setExperience}
                     className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base"
                     placeholderTextColor="#9CA3AF"
                   />
                 </View>
               </View>
 
-              {/* Feature/Important Toggle */}
-              <TouchableOpacity
-                onPress={() =>
-                  activeTab === "jobs"
-                    ? setIsFeatured(!isFeatured)
-                    : setIsImportant(!isImportant)
-                }
-                className={`flex-row items-center justify-between p-4 rounded-2xl mb-5 ${
-                  (activeTab === "jobs" ? isFeatured : isImportant)
-                    ? "bg-gradient-to-r from-yellow-500 to-orange-500"
-                    : "bg-gray-100 dark:bg-gray-800"
-                }`}
-              >
-                <View className="flex-row items-center">
+              <View className="mb-5">
+                <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
+                  Salary Range
+                </Text>
+                <TextInput
+                  placeholder="e.g., ₹30,000 - ₹50,000"
+                  value={salary}
+                  onChangeText={setSalary}
+                  className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base"
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+            </>
+          )}
+
+          {/* Category */}
+          <View className="mb-5">
+            <Text className="text-gray-700 dark:text-gray-300 font-bold mb-3 text-base">
+              Category
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="mb-2"
+            >
+              {categories.map((cat) => (
+                <TouchableOpacity
+                  key={cat.key}
+                  onPress={() => setCategory(cat.key)}
+                  style={{
+                    backgroundColor:
+                      category === cat.key ? cat.color : undefined,
+                  }}
+                  className={`mr-3 px-5 py-3 rounded-xl flex-row items-center ${
+                    category !== cat.key
+                      ? "bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700"
+                      : "shadow-lg"
+                  }`}
+                >
                   <Ionicons
-                    name="star"
-                    size={24}
-                    color={
-                      (activeTab === "jobs" ? isFeatured : isImportant)
-                        ? "white"
-                        : "#F59E0B"
-                    }
+                    name={cat.icon}
+                    size={18}
+                    color={category === cat.key ? "white" : "#9CA3AF"}
                   />
                   <Text
-                    className={`ml-3 font-bold text-base ${
-                      (activeTab === "jobs" ? isFeatured : isImportant)
+                    className={`ml-2 font-bold ${
+                      category === cat.key
                         ? "text-white"
                         : "text-gray-700 dark:text-gray-300"
                     }`}
                   >
-                    Mark as {activeTab === "jobs" ? "Featured" : "Important"}
-                  </Text>
-                </View>
-                <View
-                  className={`w-14 h-8 rounded-full p-1 ${
-                    (activeTab === "jobs" ? isFeatured : isImportant)
-                      ? "bg-white/30"
-                      : "bg-gray-300 dark:bg-gray-700"
-                  }`}
-                >
-                  <View
-                    className={`w-6 h-6 rounded-full transition-all ${
-                      (activeTab === "jobs" ? isFeatured : isImportant)
-                        ? "bg-white ml-auto"
-                        : "bg-white"
-                    }`}
-                  />
-                </View>
-              </TouchableOpacity>
-
-              {/* Requirements */}
-              <View className="mb-5">
-                <Text className="text-gray-700 dark:text-gray-300 font-bold mb-3 text-base">
-                  {activeTab === "jobs"
-                    ? "Requirements"
-                    : "Eligibility Criteria"}
-                </Text>
-                <View className="flex-row mb-3">
-                  <TextInput
-                    placeholder="Add requirement"
-                    value={newRequirement}
-                    onChangeText={setNewRequirement}
-                    className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 mr-2 text-gray-900 dark:text-white"
-                    placeholderTextColor="#9CA3AF"
-                  />
-                  <TouchableOpacity
-                    onPress={addRequirement}
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl px-5 items-center justify-center shadow-md"
-                  >
-                    <Ionicons name="add" size={28} color="white" />
-                  </TouchableOpacity>
-                </View>
-                {requirements.map((req, index) => (
-                  <View
-                    key={index}
-                    className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 mb-2 flex-row items-center border border-blue-200/50 dark:border-blue-700/30"
-                  >
-                    <View className="bg-blue-500 w-2 h-2 rounded-full mr-3" />
-                    <Text className="flex-1 text-gray-800 dark:text-gray-200 font-medium">
-                      {req}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => removeRequirement(index)}
-                      className="ml-2"
-                    >
-                      <Ionicons name="close-circle" size={24} color="#EF4444" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-
-              {/* Attachments */}
-              <View className="mb-5">
-                <Text className="text-gray-700 dark:text-gray-300 font-bold mb-3 text-base">
-                  Attachments
-                </Text>
-
-                <View className="flex-row gap-3 mb-3">
-                  <TouchableOpacity
-                    onPress={pickDocument}
-                    disabled={uploadingFile}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-4 flex-row items-center justify-center shadow-md"
-                  >
-                    {uploadingFile ? (
-                      <ActivityIndicator size="small" color="white" />
-                    ) : (
-                      <>
-                        <Ionicons name="cloud-upload" size={22} color="white" />
-                        <Text className="text-white font-bold ml-2">
-                          Upload File
-                        </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => setGdriveModalVisible(true)}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 flex-row items-center justify-center shadow-md"
-                  >
-                    <Ionicons name="logo-google" size={22} color="white" />
-                    <Text className="text-white font-bold ml-2">
-                      Google Drive
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {attachments.map((attachment, index) => {
-                  const fileColor = getFileColor(attachment);
-                  return (
-                    <View
-                      key={index}
-                      className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 mb-3 border-2 border-gray-200 dark:border-gray-700"
-                    >
-                      <View className="flex-row items-center">
-                        <View
-                          style={{ backgroundColor: fileColor + "20" }}
-                          className="w-12 h-12 rounded-xl items-center justify-center mr-3"
-                        >
-                          <Ionicons
-                            name={getFileIcon(attachment)}
-                            size={24}
-                            color={fileColor}
-                          />
-                        </View>
-                        <View className="flex-1 mr-2">
-                          <Text
-                            className="text-gray-900 dark:text-white font-semibold mb-1"
-                            numberOfLines={1}
-                          >
-                            {attachment.name}
-                          </Text>
-                          <View
-                            style={{ backgroundColor: fileColor + "20" }}
-                            className="px-2 py-1 rounded self-start"
-                          >
-                            <Text
-                              style={{ color: fileColor }}
-                              className="text-xs font-bold"
-                            >
-                              {attachment.source === "google-drive"
-                                ? "Google Drive"
-                                : "Uploaded"}
-                            </Text>
-                          </View>
-                        </View>
-                        <TouchableOpacity
-                          onPress={() => removeAttachment(index)}
-                          className="bg-red-100 dark:bg-red-900/30 w-10 h-10 rounded-xl items-center justify-center"
-                        >
-                          <Ionicons name="trash" size={20} color="#EF4444" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            </ScrollView>
-
-            {/* Enhanced Footer */}
-            <View className="px-6 py-5 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-              <View className="flex-row gap-3">
-                <TouchableOpacity
-                  onPress={() => {
-                    Animated.parallel([
-                      Animated.timing(fadeAnim, {
-                        toValue: 0,
-                        duration: 200,
-                        useNativeDriver: true,
-                      }),
-                      Animated.timing(slideAnim, {
-                        toValue: 50,
-                        duration: 200,
-                        useNativeDriver: true,
-                      }),
-                    ]).start(() => setModalVisible(false));
-                  }}
-                  className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-2xl py-4 items-center"
-                >
-                  <Text className="text-gray-800 dark:text-white font-bold text-base">
-                    Cancel
+                    {cat.label}
                   </Text>
                 </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
 
+          {/* Status & Deadline */}
+          <View className="flex-row gap-3 mb-5">
+            <View className="flex-1">
+              <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
+                Status
+              </Text>
+              <View className="bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden">
                 <TouchableOpacity
-                  onPress={handleCreateOrUpdate}
-                  disabled={loading}
-                  className="flex-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl py-4 items-center shadow-lg"
-                  style={{ flex: 2 }}
+                  onPress={() => setStatus("active")}
+                  className={`p-4 flex-row items-center ${status === "active" ? "bg-green-500" : ""}`}
                 >
-                  {loading ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <View className="flex-row items-center">
-                      <Ionicons
-                        name={editMode ? "save" : "add-circle"}
-                        size={22}
-                        color="white"
-                      />
-                      <Text className="text-white font-bold text-base ml-2">
-                        {editMode ? "Update" : "Create"}{" "}
-                        {activeTab === "jobs" ? "Job" : "Form"}
-                      </Text>
-                    </View>
-                  )}
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={status === "active" ? "white" : "#10B981"}
+                  />
+                  <Text
+                    className={`ml-2 font-semibold ${status === "active" ? "text-white" : "text-gray-700 dark:text-gray-300"}`}
+                  >
+                    Active
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
-          </Animated.View>
+
+            <View className="flex-1">
+              <Text className="text-gray-700 dark:text-gray-300 font-bold mb-2 text-base">
+                Deadline
+              </Text>
+              <TextInput
+                placeholder="YYYY-MM-DD"
+                value={deadline}
+                onChangeText={setDeadline}
+                className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white text-base"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+          </View>
+
+          {/* Feature/Important Toggle */}
+          <TouchableOpacity
+            onPress={() =>
+              activeTab === "jobs"
+                ? setIsFeatured(!isFeatured)
+                : setIsImportant(!isImportant)
+            }
+            className={`flex-row items-center justify-between p-4 rounded-2xl mb-5 ${
+              (activeTab === "jobs" ? isFeatured : isImportant)
+                ? "bg-yellow-500"
+                : "bg-gray-100 dark:bg-gray-800"
+            }`}
+          >
+            <View className="flex-row items-center">
+              <Ionicons
+                name="star"
+                size={24}
+                color={
+                  (activeTab === "jobs" ? isFeatured : isImportant)
+                    ? "white"
+                    : "#F59E0B"
+                }
+              />
+              <Text
+                className={`ml-3 font-bold text-base ${
+                  (activeTab === "jobs" ? isFeatured : isImportant)
+                    ? "text-white"
+                    : "text-gray-700 dark:text-gray-300"
+                }`}
+              >
+                Mark as {activeTab === "jobs" ? "Featured" : "Important"}
+              </Text>
+            </View>
+            <View
+              className={`w-14 h-8 rounded-full p-1 ${
+                (activeTab === "jobs" ? isFeatured : isImportant)
+                  ? "bg-white/30"
+                  : "bg-gray-300 dark:bg-gray-700"
+              }`}
+            >
+              <View
+                className={`w-6 h-6 rounded-full ${
+                  (activeTab === "jobs" ? isFeatured : isImportant)
+                    ? "bg-white ml-auto"
+                    : "bg-white"
+                }`}
+              />
+            </View>
+          </TouchableOpacity>
+
+          {/* Requirements */}
+          <View className="mb-5">
+            <Text className="text-gray-700 dark:text-gray-300 font-bold mb-3 text-base">
+              {activeTab === "jobs"
+                ? "Requirements"
+                : "Eligibility Criteria"}
+            </Text>
+            <View className="flex-row mb-3">
+              <TextInput
+                placeholder="Add requirement"
+                value={newRequirement}
+                onChangeText={setNewRequirement}
+                className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 mr-2 text-gray-900 dark:text-white"
+                placeholderTextColor="#9CA3AF"
+              />
+              <TouchableOpacity
+                onPress={addRequirement}
+                className="bg-blue-500 rounded-2xl px-5 items-center justify-center shadow-md"
+              >
+                <Ionicons name="add" size={28} color="white" />
+              </TouchableOpacity>
+            </View>
+            {requirements.map((req, index) => (
+              <View
+                key={index}
+                className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 mb-2 flex-row items-center border border-blue-200 dark:border-blue-700"
+              >
+                <View className="bg-blue-500 w-2 h-2 rounded-full mr-3" />
+                <Text className="flex-1 text-gray-800 dark:text-gray-200 font-medium">
+                  {req}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => removeRequirement(index)}
+                  className="ml-2"
+                >
+                  <Ionicons
+                    name="close-circle"
+                    size={24}
+                    color="#EF4444"
+                  />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+
+          {/* Attachments */}
+          <View className="mb-5">
+            <Text className="text-gray-700 dark:text-gray-300 font-bold mb-3 text-base">
+              Attachments
+            </Text>
+
+            <View className="flex-row gap-3 mb-3">
+              <TouchableOpacity
+                onPress={pickDocument}
+                disabled={uploadingFile}
+                className="flex-1 bg-green-500 rounded-2xl p-4 flex-row items-center justify-center shadow-md"
+              >
+                {uploadingFile ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="cloud-upload"
+                      size={22}
+                      color="white"
+                    />
+                    <Text className="text-white font-bold ml-2">
+                      Upload File
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setGdriveModalVisible(true)}
+                className="flex-1 bg-blue-500 rounded-2xl p-4 flex-row items-center justify-center shadow-md"
+              >
+                <Ionicons name="logo-google" size={22} color="white" />
+                <Text className="text-white font-bold ml-2">
+                  Google Drive
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {attachments.map((attachment, index) => {
+              const fileColor = getFileColor(attachment);
+              return (
+                <View
+                  key={index}
+                  className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 mb-3 border-2 border-gray-200 dark:border-gray-700"
+                >
+                  <View className="flex-row items-center">
+                    <View
+                      style={{ backgroundColor: fileColor + "20" }}
+                      className="w-12 h-12 rounded-xl items-center justify-center mr-3"
+                    >
+                      <Ionicons
+                        name={getFileIcon(attachment)}
+                        size={24}
+                        color={fileColor}
+                      />
+                    </View>
+                    <View className="flex-1 mr-2">
+                      <Text
+                        className="text-gray-900 dark:text-white font-semibold mb-1"
+                        numberOfLines={1}
+                      >
+                        {attachment.name}
+                      </Text>
+                      <View
+                        style={{ backgroundColor: fileColor + "20" }}
+                        className="px-2 py-1 rounded self-start"
+                      >
+                        <Text
+                          style={{ color: fileColor }}
+                          className="text-xs font-bold"
+                        >
+                          {attachment.source === "google-drive"
+                            ? "Google Drive"
+                            : "Uploaded"}
+                        </Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => removeAttachment(index)}
+                      className="bg-red-100 dark:bg-red-900/30 w-10 h-10 rounded-xl items-center justify-center"
+                    >
+                      <Ionicons name="trash" size={20} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         </View>
-      </Modal>
+      </KeyboardAwareScrollView>
+
+      {/* Enhanced Footer - Fixed */}
+      <View className="px-6 py-5 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+        <View className="flex-row gap-3">
+          <TouchableOpacity
+            onPress={() => {
+              Animated.parallel([
+                Animated.timing(fadeAnim, {
+                  toValue: 0,
+                  duration: 200,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(slideAnim, {
+                  toValue: 50,
+                  duration: 200,
+                  useNativeDriver: true,
+                }),
+              ]).start(() => setModalVisible(false));
+            }}
+            className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-2xl py-4 items-center"
+          >
+            <Text className="text-gray-800 dark:text-white font-bold text-base">
+              Cancel
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleCreateOrUpdate}
+            disabled={loading}
+            className="bg-blue-500 rounded-2xl py-4 items-center shadow-lg"
+            style={{ flex: 2 }}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <View className="flex-row items-center">
+                <Ionicons
+                  name={editMode ? "save" : "add-circle"}
+                  size={22}
+                  color="white"
+                />
+                <Text className="text-white font-bold text-base ml-2">
+                  {editMode ? "Update" : "Create"}{" "}
+                  {activeTab === "jobs" ? "Job" : "Form"}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Animated.View>
+  </View>
+</Modal>
 
       {/* Google Drive URL Modal */}
       <Modal
-        visible={gdriveModalVisible}
-        animationType="fade"
-        transparent={true}
-      >
-        <View className="flex-1 justify-center items-center bg-black/70 px-6">
-          <View className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-md">
-            <View className="items-center mb-6">
-              <View className="bg-gradient-to-br from-blue-500 to-blue-600 w-20 h-20 rounded-full items-center justify-center mb-4 shadow-lg">
-                <Ionicons name="logo-google" size={40} color="white" />
-              </View>
-              <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Add Google Drive File
-              </Text>
-              <Text className="text-gray-600 dark:text-gray-400 text-center text-sm">
-                Enter the Google Drive sharing link
-              </Text>
-            </View>
-
-            <View className="mb-4">
-              <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
-                File Name
-              </Text>
-              <TextInput
-                placeholder="Enter file name"
-                value={gdriveFileName}
-                onChangeText={setGdriveFileName}
-                className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
-
-            <View className="mb-6">
-              <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
-                Google Drive URL
-              </Text>
-              <TextInput
-                placeholder="Paste Google Drive link here"
-                value={gdriveUrl}
-                onChangeText={setGdriveUrl}
-                className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white"
-                placeholderTextColor="#9CA3AF"
-                multiline
-              />
-            </View>
-
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={() => {
-                  setGdriveModalVisible(false);
-                  setGdriveUrl("");
-                  setGdriveFileName("");
-                }}
-                className="flex-1 bg-gray-200 dark:bg-gray-800 rounded-2xl p-4 items-center"
-              >
-                <Text className="text-gray-800 dark:text-white font-bold">
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleAddGDriveUrl}
-                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 items-center shadow-lg"
-              >
-                <Text className="text-white font-bold">Add File</Text>
-              </TouchableOpacity>
-            </View>
+  visible={gdriveModalVisible}
+  animationType="fade"
+  transparent={true}
+  onRequestClose={() => {
+    setGdriveModalVisible(false);
+    setGdriveUrl("");
+    setGdriveFileName("");
+  }}
+>
+  <View className="flex-1 bg-black/70">
+    <KeyboardAwareScrollView
+      enableOnAndroid
+      keyboardShouldPersistTaps="handled"
+      extraScrollHeight={Platform.OS === "ios" ? 20 : 40}
+      contentContainerStyle={{ 
+        flexGrow: 1,
+        justifyContent: "center",
+        paddingHorizontal: 24,
+        paddingVertical: 40
+      }}
+      showsVerticalScrollIndicator={false}
+    >
+      <View className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-md mx-auto shadow-2xl">
+        <View className="items-center mb-6">
+          <View className="bg-blue-500 w-20 h-20 rounded-full items-center justify-center mb-4 shadow-lg">
+            <Ionicons name="logo-google" size={40} color="white" />
           </View>
+          <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Add Google Drive File
+          </Text>
+          <Text className="text-gray-600 dark:text-gray-400 text-center text-sm">
+            Enter the Google Drive sharing link
+          </Text>
         </View>
-      </Modal>
+
+        <View className="mb-4">
+          <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+            File Name
+          </Text>
+          <TextInput
+            placeholder="Enter file name"
+            value={gdriveFileName}
+            onChangeText={setGdriveFileName}
+            className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white"
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
+
+        <View className="mb-6">
+          <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+            Google Drive URL
+          </Text>
+          <TextInput
+            placeholder="Paste Google Drive link here"
+            value={gdriveUrl}
+            onChangeText={setGdriveUrl}
+            className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white"
+            placeholderTextColor="#9CA3AF"
+            multiline
+            numberOfLines={3}
+            style={{ minHeight: 80 }}
+          />
+        </View>
+
+        <View className="flex-row gap-3">
+          <TouchableOpacity
+            onPress={() => {
+              setGdriveModalVisible(false);
+              setGdriveUrl("");
+              setGdriveFileName("");
+            }}
+            className="flex-1 bg-gray-200 dark:bg-gray-800 rounded-2xl p-4 items-center"
+          >
+            <Text className="text-gray-800 dark:text-white font-bold">
+              Cancel
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleAddGDriveUrl}
+            disabled={!gdriveFileName.trim() || !gdriveUrl.trim()}
+            className={`flex-1 rounded-2xl p-4 items-center shadow-lg ${
+              !gdriveFileName.trim() || !gdriveUrl.trim()
+                ? "bg-gray-400 dark:bg-gray-700"
+                : "bg-blue-500"
+            }`}
+          >
+            <Text className="text-white font-bold">Add File</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </KeyboardAwareScrollView>
+  </View>
+</Modal>
 
       {/* Enhanced Delete Confirmation Modal */}
       <Modal

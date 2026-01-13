@@ -21,6 +21,7 @@ import AppHeader from "@/src/components/Auth/AppHeader";
 import RoleCard from "@/src/components/RoleCard";
 import LoginForm from "./LoginForm";
 import Loading from "@/src/components/Loading";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -501,12 +502,19 @@ export default function LoginScreen() {
                 <View className="w-16 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full shadow-sm" />
               </View>
 
-              <LoginForm
-                roleInfo={selectedRoleData}
-                onLogin={handleLogin}
-                onClose={hideLoginFormAnimation}
-                isLoading={isLoading}
-              />
+              <KeyboardAwareScrollView
+                enableOnAndroid
+                keyboardShouldPersistTaps="handled"
+                extraScrollHeight={Platform.OS === "ios" ? 20 : 40}
+                contentContainerStyle={{ paddingBottom: 24 }}
+              >
+                <LoginForm
+                  roleInfo={selectedRoleData}
+                  onLogin={handleLogin}
+                  onClose={hideLoginFormAnimation}
+                  isLoading={isLoading}
+                />
+              </KeyboardAwareScrollView>
             </Animated.View>
           </KeyboardAvoidingView>
         </View>

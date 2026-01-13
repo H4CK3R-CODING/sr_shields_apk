@@ -1,13 +1,4 @@
 import express from "express";
-import {
-  signup,
-  verifyOtp,
-  login,
-  logout,
-  forgotPassword,
-  resetPassword,
-  isLogin,
-} from "../controllers/authController.js";
 import { getProfile, loginUser, registerUser } from "../controllers/auth.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 
@@ -26,8 +17,8 @@ router.post('/login', loginUser);
 // Protected routes
 router.get('/profile', protect, getProfile);
 
-// Password reset routes
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
+// // Password reset routes
+// router.post("/forgot-password", forgotPassword);
+// router.post("/reset-password", resetPassword);
 
 export default router;

@@ -7,10 +7,14 @@ import {
   TextInput,
   Linking,
   Alert,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import NavLayout from "@/src/components/Navbar/NavLayout";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { api } from "@/src/services/api";
+import Toast from "react-native-toast-message";
 
 export default function SupportScreen({ navigation }) {
   const [activeTab, setActiveTab] = useState("contact");
@@ -18,6 +22,7 @@ export default function SupportScreen({ navigation }) {
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const contactMethods = [
     {
@@ -25,8 +30,8 @@ export default function SupportScreen({ navigation }) {
       icon: "call",
       title: "Phone Support",
       subtitle: "Talk to our experts",
-      value: "1800-XXX-XXXX",
-      action: () => Linking.openURL("tel:1800XXXXXXX"),
+      value: "+918607550898",
+      action: () => Linking.openURL("tel:+918607550898"),
       color: "#10B981",
       gradient: ["#10B981", "#059669"],
     },
@@ -36,7 +41,7 @@ export default function SupportScreen({ navigation }) {
       title: "Email Support",
       subtitle: "Get help via email",
       value: "support@csc.gov.in",
-      action: () => Linking.openURL("mailto:support@csc.gov.in"),
+      action: () => Linking.openURL("mailto:souravrathour02@gmail.com"),
       color: "#0EA5E9",
       gradient: ["#0EA5E9", "#0284C7"],
     },
@@ -45,20 +50,10 @@ export default function SupportScreen({ navigation }) {
       icon: "logo-whatsapp",
       title: "WhatsApp",
       subtitle: "Chat with us",
-      value: "+91 XXXXX-XXXXX",
-      action: () => Linking.openURL("whatsapp://send?phone=91XXXXXXXXXX"),
+      value: "+91 8607550898",
+      action: () => Linking.openURL("whatsapp://send?phone=918607550898"),
       color: "#22C55E",
       gradient: ["#22C55E", "#16A34A"],
-    },
-    {
-      id: "location",
-      icon: "location",
-      title: "Visit Center",
-      subtitle: "Find nearest CSC",
-      value: "Locate on Map",
-      action: () => navigation.navigate("LocateCenter"),
-      color: "#F59E0B",
-      gradient: ["#F59E0B", "#D97706"],
     },
   ];
 
@@ -128,12 +123,45 @@ export default function SupportScreen({ navigation }) {
     },
   ];
 
-  const handleSubmitQuery = () => {
+  const handleSubmitQuery = async () => {
     if (!email || !subject || !message) {
       Alert.alert("Error", "Please fill all fields");
       return;
     }
-    Alert.alert("Success", "Your query has been submitted. We'll get back to you within 24 hours.");
+    try {
+      setLoading(true);
+
+      // Fetch dashboard stats
+      const { data } = await api.post("/sendMessage", {
+        email,
+        subject,
+        message,
+      });
+
+      if (data.success) {
+        Toast.show({
+          type: "success",
+          text1: "Query Submitted",
+          text2:
+            "Your query has been submitted. We'll get back to you within 24 hours.",
+          position: "top",
+          visibilityTime: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Error at query submission:", error);
+      if (error.response?.status !== 401) {
+        Toast.show({
+          type: "error",
+          text1: "Registration Failed",
+          text2: error.response?.data?.msg || "Please try again later.",
+          position: "top",
+          visibilityTime: 3000,
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
     setEmail("");
     setSubject("");
     setMessage("");
@@ -204,9 +232,12 @@ export default function SupportScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <ScrollView
+        <KeyboardAwareScrollView
+          enableOnAndroid
+          keyboardShouldPersistTaps="handled"
+          extraScrollHeight={Platform.OS === "ios" ? 20 : 40}
+          contentContainerStyle={{ paddingBottom: 120 }}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
           className="flex-1"
         >
           {/* Contact Tab */}
@@ -379,11 +410,7 @@ export default function SupportScreen({ navigation }) {
           {activeTab === "faq" && (
             <View className="mx-4 mt-4">
               <View className="bg-blue-100 dark:bg-blue-900 rounded-2xl p-4 mb-4 flex-row items-center">
-                <Ionicons
-                  name="information-circle"
-                  size={24}
-                  color="#0EA5E9"
-                />
+                <Ionicons name="information-circle" size={24} color="#0EA5E9" />
                 <Text className="text-blue-900 dark:text-blue-100 ml-3 flex-1">
                   Find quick answers to common questions
                 </Text>
@@ -415,9 +442,7 @@ export default function SupportScreen({ navigation }) {
                     </View>
                     <Ionicons
                       name={
-                        expandedFaq === faq.id
-                          ? "chevron-up"
-                          : "chevron-down"
+                        expandedFaq === faq.id ? "chevron-up" : "chevron-down"
                       }
                       size={20}
                       color="#9CA3AF"
@@ -526,7 +551,7 @@ export default function SupportScreen({ navigation }) {
               </View>
             </View>
           )}
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </View>
     </NavLayout>
   );

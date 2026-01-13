@@ -1,12 +1,11 @@
-import express from 'express';
+import express from "express";
 import {
   getAllUsers,
   getUserById,
   toggleUserStatus,
-  updateUserStatus,
-  deleteUser
-} from '../controllers/userController.js';
-import { isAdmin, protect } from '../middleware/auth.middleware.js';
+  deleteUser,
+} from "../controllers/userController.js";
+import { isAdmin, protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -15,13 +14,13 @@ router.use(protect);
 router.use(isAdmin);
 
 // Get all users with filtering and pagination
-router.get('/', getAllUsers);
+router.get("/", getAllUsers);
 
 // Get single user by ID
 // router.get('/:id', getUserById);
 
 // Toggle user active status
-router.patch('/:id/toggle-status', toggleUserStatus);
+router.patch("/:id/toggle-status", toggleUserStatus);
 
 // Update user status
 // router.patch('/:id/status', updateUserStatus);

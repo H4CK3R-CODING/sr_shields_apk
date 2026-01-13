@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "icon": "./assets/images/icon.png",
       "runtimeVersion": {
         "policy": "appVersion"
       }
@@ -25,11 +26,13 @@
         "resizeMode": "contain",
         "backgroundColor": "#E6F4FE"
       },
+      "icon": "./assets/images/icon.png",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/icon.png"
       },
       "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false,
       "package": "com.aetherionx.frontend",
       "runtimeVersion": "1.0.0"
@@ -41,6 +44,7 @@
           "dangerouslyAllowEval": true
         }
       },
+      "icon": "./assets/images/icon.png",
       "bundler": "metro",
       "favicon": "./assets/images/web.png"
     },

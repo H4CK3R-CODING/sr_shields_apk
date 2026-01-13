@@ -14,6 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import useAuthStore from "../../state/authStore";
 import Toast from "react-native-toast-message";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function RegistrationPage({ navigation }) {
   const { register } = useAuthStore();
@@ -675,7 +676,12 @@ export default function RegistrationPage({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-gray-50 dark:bg-gray-900"
     >
-      <ScrollView className="flex-1">
+      <KeyboardAwareScrollView
+        enableOnAndroid
+        keyboardShouldPersistTaps="handled"
+        extraScrollHeight={Platform.OS === "ios" ? 20 : 40}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
         {/* Header */}
         <View className="bg-white dark:bg-gray-800 px-6 pt-12 pb-6 shadow-sm">
           <TouchableOpacity
@@ -707,7 +713,7 @@ export default function RegistrationPage({ navigation }) {
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Bottom Action Buttons */}
       <View className="bg-white dark:bg-gray-800 p-6 shadow-lg">
