@@ -25,6 +25,7 @@ export default function ProfileScreen({ navigation }) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -38,6 +39,8 @@ export default function ProfileScreen({ navigation }) {
     address: "",
     dateOfBirth: new Date(),
     gender: "male",
+    department: "",
+    role: "user",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -53,7 +56,12 @@ export default function ProfileScreen({ navigation }) {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const { data } = await api.get("/user/profile");
+
+      // Determine endpoint based on user role
+      const endpoint =
+        user?.role === "admin" ? "/user/profile" : "/user/profile";
+
+      const { data } = await api.get(endpoint);
 
       if (data.success) {
         setProfileData({
@@ -65,6 +73,8 @@ export default function ProfileScreen({ navigation }) {
             ? new Date(data.user.dateOfBirth)
             : new Date(),
           gender: data.user.gender || "male",
+          department: data.user.department || "",
+          role: data.user.role || "user",
         });
       }
     } catch (error) {
@@ -92,20 +102,47 @@ export default function ProfileScreen({ navigation }) {
         return;
       }
 
-      if (!profileData.address.trim()) {
-        Alert.alert("Error", "Address is required");
-        return;
+      // Role-specific validation
+      if (profileData.role === "user") {
+        if (!profileData.address.trim()) {
+          Alert.alert("Error", "Address is required for users");
+          return;
+        }
+        if (!profileData.gender) {
+          Alert.alert("Error", "Gender is required for users");
+          return;
+        }
+      }
+
+      if (profileData.role === "admin") {
+        if (!profileData.department.trim()) {
+          Alert.alert("Error", "Department is required for admins");
+          return;
+        }
       }
 
       setSaving(true);
 
-      const { data } = await api.put("/user/profile", {
+      const updatePayload = {
         fullName: profileData.fullName,
         phone: profileData.phone,
-        address: profileData.address,
-        dateOfBirth: profileData.dateOfBirth,
-        gender: profileData.gender,
-      });
+      };
+
+      // Add role-specific fields
+      if (profileData.role === "user") {
+        updatePayload.address = profileData.address;
+        updatePayload.dateOfBirth = profileData.dateOfBirth;
+        updatePayload.gender = profileData.gender;
+      }
+
+      if (profileData.role === "admin") {
+        updatePayload.department = profileData.department;
+      }
+
+      const endpoint =
+        profileData.role === "admin" ? "/user/profile" : "/user/profile";
+
+      const { data } = await api.put(endpoint, updatePayload);
 
       if (data.success) {
         // Update local user state
@@ -144,7 +181,12 @@ export default function ProfileScreen({ navigation }) {
 
       setSaving(true);
 
-      const { data } = await api.put("/user/change-password", {
+      const endpoint =
+        profileData.role === "admin"
+          ? "/user/change-password"
+          : "/user/change-password";
+
+      const { data } = await api.put(endpoint, {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       });
@@ -170,17 +212,16 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          await logout();
-          navigation.replace("Login");
-        },
-      },
-    ]);
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
+    await logout();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Login" }], // Change "Login" to your actual route name
+    });
   };
 
   const formatDate = (date) => {
@@ -340,90 +381,139 @@ export default function ProfileScreen({ navigation }) {
               )}
             </View>
 
-            {/* Gender */}
-            <View className="mb-4">
-              <Text className="text-gray-600 dark:text-gray-400 text-sm mb-2 font-semibold">
-                Gender *
-              </Text>
-              {isEditing ? (
-                <View className="flex-row">
-                  {["male", "female", "other"].map((option) => (
-                    <TouchableOpacity
-                      key={option}
-                      onPress={() =>
-                        setProfileData({ ...profileData, gender: option })
-                      }
-                      className={`flex-1 mr-2 rounded-xl py-3 ${
-                        profileData.gender === option
-                          ? "bg-blue-500"
-                          : "bg-gray-100 dark:bg-gray-700"
-                      }`}
-                    >
-                      <Text
-                        className={`text-center font-semibold capitalize ${
-                          profileData.gender === option
-                            ? "text-white"
-                            : "text-gray-600 dark:text-gray-400"
-                        }`}
-                      >
-                        {option}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                <Text className="text-gray-900 dark:text-white text-base capitalize">
-                  {profileData.gender}
-                </Text>
-              )}
-            </View>
-
-            {/* Date of Birth */}
-            <View className="mb-4">
-              <Text className="text-gray-600 dark:text-gray-400 text-sm mb-2 font-semibold">
-                Date of Birth *
-              </Text>
-              {isEditing ? (
-                <TouchableOpacity
-                  onPress={() => setShowDatePicker(true)}
-                  className="bg-gray-50 dark:bg-gray-700 rounded-xl px-4 py-3 flex-row justify-between items-center"
-                >
-                  <Text className="text-gray-900 dark:text-white text-base">
-                    {formatDate(profileData.dateOfBirth)}
+            {/* Admin-specific fields */}
+            {profileData.role === "admin" && (
+              <>
+                {/* Department */}
+                <View className="mb-4">
+                  <Text className="text-gray-600 dark:text-gray-400 text-sm mb-2 font-semibold">
+                    Department *
                   </Text>
-                  <Ionicons name="calendar" size={20} color="#3B82F6" />
-                </TouchableOpacity>
-              ) : (
-                <Text className="text-gray-900 dark:text-white text-base">
-                  {formatDate(profileData.dateOfBirth)}
-                </Text>
-              )}
-            </View>
+                  {isEditing ? (
+                    <TextInput
+                      value={profileData.department}
+                      onChangeText={(text) =>
+                        setProfileData({ ...profileData, department: text })
+                      }
+                      className="bg-gray-50 dark:bg-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
+                      placeholder="Enter department name"
+                      placeholderTextColor="#9CA3AF"
+                    />
+                  ) : (
+                    <Text className="text-gray-900 dark:text-white text-base">
+                      {profileData.department || "Not specified"}
+                    </Text>
+                  )}
+                </View>
 
-            {/* Address */}
-            <View>
-              <Text className="text-gray-600 dark:text-gray-400 text-sm mb-2 font-semibold">
-                Address *
-              </Text>
-              {isEditing ? (
-                <TextInput
-                  value={profileData.address}
-                  onChangeText={(text) =>
-                    setProfileData({ ...profileData, address: text })
-                  }
-                  className="bg-gray-50 dark:bg-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
-                  placeholder="Enter your address"
-                  placeholderTextColor="#9CA3AF"
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                />
-              ) : (
-                <Text className="text-gray-900 dark:text-white text-base">
-                  {profileData.address}
-                </Text>
-              )}
-            </View>
+                {/* Role Badge */}
+                <View className="mb-4">
+                  <Text className="text-gray-600 dark:text-gray-400 text-sm mb-2 font-semibold">
+                    Role
+                  </Text>
+                  <View className="bg-purple-100 dark:bg-purple-900/30 px-4 py-3 rounded-xl flex-row items-center">
+                    <Ionicons
+                      name="shield-checkmark"
+                      size={20}
+                      color="#8B5CF6"
+                    />
+                    <Text className="text-purple-700 dark:text-purple-400 font-bold ml-2 capitalize">
+                      Administrator
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
+
+            {/* User-specific fields */}
+            {profileData.role === "user" && (
+              <>
+                {/* Gender */}
+                <View className="mb-4">
+                  <Text className="text-gray-600 dark:text-gray-400 text-sm mb-2 font-semibold">
+                    Gender *
+                  </Text>
+                  {isEditing ? (
+                    <View className="flex-row">
+                      {["male", "female", "other"].map((option) => (
+                        <TouchableOpacity
+                          key={option}
+                          onPress={() =>
+                            setProfileData({ ...profileData, gender: option })
+                          }
+                          className={`flex-1 mr-2 rounded-xl py-3 ${
+                            profileData.gender === option
+                              ? "bg-blue-500"
+                              : "bg-gray-100 dark:bg-gray-700"
+                          }`}
+                        >
+                          <Text
+                            className={`text-center font-semibold capitalize ${
+                              profileData.gender === option
+                                ? "text-white"
+                                : "text-gray-600 dark:text-gray-400"
+                            }`}
+                          >
+                            {option}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text className="text-gray-900 dark:text-white text-base capitalize">
+                      {profileData.gender}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Date of Birth */}
+                <View className="mb-4">
+                  <Text className="text-gray-600 dark:text-gray-400 text-sm mb-2 font-semibold">
+                    Date of Birth *
+                  </Text>
+                  {isEditing ? (
+                    <TouchableOpacity
+                      onPress={() => setShowDatePicker(true)}
+                      className="bg-gray-50 dark:bg-gray-700 rounded-xl px-4 py-3 flex-row justify-between items-center"
+                    >
+                      <Text className="text-gray-900 dark:text-white text-base">
+                        {formatDate(profileData.dateOfBirth)}
+                      </Text>
+                      <Ionicons name="calendar" size={20} color="#3B82F6" />
+                    </TouchableOpacity>
+                  ) : (
+                    <Text className="text-gray-900 dark:text-white text-base">
+                      {formatDate(profileData.dateOfBirth)}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Address */}
+                <View>
+                  <Text className="text-gray-600 dark:text-gray-400 text-sm mb-2 font-semibold">
+                    Address *
+                  </Text>
+                  {isEditing ? (
+                    <TextInput
+                      value={profileData.address}
+                      onChangeText={(text) =>
+                        setProfileData({ ...profileData, address: text })
+                      }
+                      className="bg-gray-50 dark:bg-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white"
+                      placeholder="Enter your address"
+                      placeholderTextColor="#9CA3AF"
+                      multiline
+                      numberOfLines={3}
+                      textAlignVertical="top"
+                    />
+                  ) : (
+                    <Text className="text-gray-900 dark:text-white text-base">
+                      {profileData.address}
+                    </Text>
+                  )}
+                </View>
+              </>
+            )}
           </View>
 
           {/* Save/Cancel Buttons */}
@@ -701,6 +791,48 @@ export default function ProfileScreen({ navigation }) {
                     Update Password
                   </Text>
                 )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        visible={showLogoutModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-sm">
+            <View className="items-center mb-6">
+              <View className="bg-red-100 dark:bg-red-900/30 w-16 h-16 rounded-full items-center justify-center mb-4">
+                <Ionicons name="log-out-outline" size={32} color="#EF4444" />
+              </View>
+              <Text className="text-gray-900 dark:text-white font-bold text-xl mb-2">
+                Logout
+              </Text>
+              <Text className="text-gray-600 dark:text-gray-400 text-center">
+                Are you sure you want to logout?
+              </Text>
+            </View>
+
+            <View className="flex-row space-x-3">
+              <TouchableOpacity
+                onPress={() => setShowLogoutModal(false)}
+                className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-xl py-4 mr-2"
+              >
+                <Text className="text-gray-800 dark:text-white text-center font-bold">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={confirmLogout}
+                className="flex-1 bg-red-500 rounded-xl py-4 ml-2"
+              >
+                <Text className="text-white text-center font-bold">Logout</Text>
               </TouchableOpacity>
             </View>
           </View>

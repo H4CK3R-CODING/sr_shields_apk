@@ -184,11 +184,11 @@ export const deleteUser = async (req, res) => {
 
 
 /**
- * Get User Profile
- * @route GET /api/user/profile
- * @access Private (User)
+ * Get User/Admin Profile
+ * @route GET /api/user/profile OR /api/admin/profile
+ * @access Private (User/Admin)
  */
-export const getUserProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -201,26 +201,37 @@ export const getUserProfile = async (req, res) => {
       });
     }
 
+    // Build response based on role
+    const profileData = {
+      id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      isActive: user.isActive,
+      isEmailVerified: user.isEmailVerified,
+      lastLogin: user.lastLogin,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    // Add role-specific fields
+    if (user.role === "user") {
+      profileData.address = user.address;
+      profileData.dateOfBirth = user.dateOfBirth;
+      profileData.gender = user.gender;
+    }
+
+    if (user.role === "admin") {
+      profileData.department = user.department;
+    }
+
     res.status(200).json({
       success: true,
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-        dateOfBirth: user.dateOfBirth,
-        gender: user.gender,
-        role: user.role,
-        isActive: user.isActive,
-        isEmailVerified: user.isEmailVerified,
-        lastLogin: user.lastLogin,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
+      user: profileData,
     });
   } catch (error) {
-    console.error("Error fetching user profile:", error);
+    console.error("Error fetching profile:", error);
     res.status(500).json({
       success: false,
       message: "Failed to load profile",
@@ -230,16 +241,26 @@ export const getUserProfile = async (req, res) => {
 };
 
 /**
- * Update User Profile
- * @route PUT /api/user/profile
- * @access Private (User)
+ * Update User/Admin Profile
+ * @route PUT /api/user/profile OR /api/admin/profile
+ * @access Private (User/Admin)
  */
-export const updateUserProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { fullName, phone, address, dateOfBirth, gender } = req.body;
+    const { fullName, phone, address, dateOfBirth, gender, department } = req.body;
 
-    // Validation
+    // Find user
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Common validation
     if (!fullName || fullName.trim().length < 2) {
       return res.status(400).json({
         success: false,
@@ -254,67 +275,82 @@ export const updateUserProfile = async (req, res) => {
       });
     }
 
-    if (!address || address.trim().length < 5) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide a valid address",
-      });
-    }
-
-    if (!dateOfBirth) {
-      return res.status(400).json({
-        success: false,
-        message: "Date of birth is required",
-      });
-    }
-
-    if (!["male", "female", "other"].includes(gender)) {
-      return res.status(400).json({
-        success: false,
-        message: "Please select a valid gender",
-      });
-    }
-
-    // Find and update user
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Update fields
+    // Update common fields
     user.fullName = fullName.trim();
     user.phone = phone;
-    user.address = address.trim();
-    user.dateOfBirth = new Date(dateOfBirth);
-    user.gender = gender;
+
+    // Role-specific validation and updates
+    if (user.role === "user") {
+      if (!address || address.trim().length < 5) {
+        return res.status(400).json({
+          success: false,
+          message: "Please provide a valid address (minimum 5 characters)",
+        });
+      }
+
+      if (!dateOfBirth) {
+        return res.status(400).json({
+          success: false,
+          message: "Date of birth is required",
+        });
+      }
+
+      if (!["male", "female", "other"].includes(gender)) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a valid gender",
+        });
+      }
+
+      user.address = address.trim();
+      user.dateOfBirth = new Date(dateOfBirth);
+      user.gender = gender;
+    }
+
+    if (user.role === "admin") {
+      if (!department || department.trim().length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: "Department is required for admin users",
+        });
+      }
+
+      user.department = department.trim();
+    }
 
     await user.save();
 
     // Return updated user without password
     const updatedUser = await User.findById(userId).select("-password");
 
+    // Build response based on role
+    const profileData = {
+      id: updatedUser._id,
+      fullName: updatedUser.fullName,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      role: updatedUser.role,
+      isActive: updatedUser.isActive,
+      isEmailVerified: updatedUser.isEmailVerified,
+      lastLogin: updatedUser.lastLogin,
+      createdAt: updatedUser.createdAt,
+      updatedAt: updatedUser.updatedAt,
+    };
+
+    if (updatedUser.role === "user") {
+      profileData.address = updatedUser.address;
+      profileData.dateOfBirth = updatedUser.dateOfBirth;
+      profileData.gender = updatedUser.gender;
+    }
+
+    if (updatedUser.role === "admin") {
+      profileData.department = updatedUser.department;
+    }
+
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",
-      user: {
-        id: updatedUser._id,
-        fullName: updatedUser.fullName,
-        email: updatedUser.email,
-        phone: updatedUser.phone,
-        address: updatedUser.address,
-        dateOfBirth: updatedUser.dateOfBirth,
-        gender: updatedUser.gender,
-        role: updatedUser.role,
-        isActive: updatedUser.isActive,
-        isEmailVerified: updatedUser.isEmailVerified,
-        lastLogin: updatedUser.lastLogin,
-        createdAt: updatedUser.createdAt,
-        updatedAt: updatedUser.updatedAt,
-      },
+      user: profileData,
     });
   } catch (error) {
     console.error("Error updating profile:", error);
@@ -327,9 +363,9 @@ export const updateUserProfile = async (req, res) => {
 };
 
 /**
- * Change User Password
- * @route PUT /api/user/change-password
- * @access Private (User)
+ * Change Password (User/Admin)
+ * @route PUT /api/user/change-password OR /api/admin/change-password
+ * @access Private (User/Admin)
  */
 export const changePassword = async (req, res) => {
   try {
@@ -348,6 +384,13 @@ export const changePassword = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "New password must be at least 6 characters",
+      });
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be different from current password",
       });
     }
 
@@ -390,11 +433,11 @@ export const changePassword = async (req, res) => {
 };
 
 /**
- * Delete User Account
- * @route DELETE /api/user/profile
- * @access Private (User)
+ * Delete Account (User/Admin)
+ * @route DELETE /api/user/profile OR /api/admin/profile
+ * @access Private (User/Admin)
  */
-export const deleteUserAccount = async (req, res) => {
+export const deleteAccount = async (req, res) => {
   try {
     const userId = req.user.id;
     const { password } = req.body;

@@ -13,7 +13,8 @@
       "icon": "./assets/images/icon.png",
       "runtimeVersion": {
         "policy": "appVersion"
-      }
+      },
+      "bundleIdentifier": "com.aetherionx.frontend"
     },
     "splash": {
       "image": "./assets/images/splash.png",
@@ -35,7 +36,10 @@
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false,
       "package": "com.aetherionx.frontend",
-      "runtimeVersion": "1.0.0"
+      "runtimeVersion": "1.0.0",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "single",

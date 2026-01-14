@@ -11,6 +11,7 @@ import RegistrationPage from "../screens/Auth/Registeration";
 import SettingsScreen from "../screens/Settings/SettingsScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import HelpSupportScreen from "../screens/Support/HelpSupportScreen";
+import UserGuideScreen from "../screens/Support/UserGuideScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -28,6 +29,7 @@ export default function PublizcNavigator() {
       <Drawer.Screen name="Welcome" component={WelcomeScreen} />
       <Drawer.Screen name="About" component={AboutScreen} />
       <Drawer.Screen name="Help" component={HelpSupportScreen} />
+      <Drawer.Screen name="UserGuide" component={UserGuideScreen} />
       <Drawer.Screen name="Setting" component={SettingsScreen} />
       <Drawer.Screen name="Profile" component={ProfileScreen} />
       <Drawer.Screen name="Login" component={LoginScreen} />

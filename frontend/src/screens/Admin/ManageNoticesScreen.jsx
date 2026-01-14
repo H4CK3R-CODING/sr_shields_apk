@@ -727,12 +727,11 @@ export default function ManageNoticesScreen({ navigation }) {
             enableOnAndroid
             keyboardShouldPersistTaps="handled"
             extraScrollHeight={Platform.OS === "ios" ? 20 : 40}
-            contentContainerStyle={{ justifyContent: "flex-end" }}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 0 }}
+            style={{ maxHeight: "90%" }}
           >
-            <ScrollView
-              className="bg-white dark:bg-gray-900 rounded-t-3xl p-6"
-              style={{ maxHeight: "90%" }}
-            >
+            <View className="bg-white dark:bg-gray-900 rounded-t-3xl p-6">
               <View className="flex-row justify-between items-center mb-6">
                 <Text className="text-2xl font-bold text-gray-900 dark:text-white">
                   {editMode ? "Edit Notice" : "Create Notice"}
@@ -1045,7 +1044,7 @@ export default function ManageNoticesScreen({ navigation }) {
                   )}
                 </TouchableOpacity>
               </ScrollView>
-            </ScrollView>
+            </View>
           </KeyboardAwareScrollView>
         </View>
       </Modal>

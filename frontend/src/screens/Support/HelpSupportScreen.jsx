@@ -8,6 +8,7 @@ import {
   Linking,
   Alert,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -40,7 +41,7 @@ export default function SupportScreen({ navigation }) {
       icon: "mail",
       title: "Email Support",
       subtitle: "Get help via email",
-      value: "support@csc.gov.in",
+      value: "souravrathour02@gmail.com",
       action: () => Linking.openURL("mailto:souravrathour02@gmail.com"),
       color: "#0EA5E9",
       gradient: ["#0EA5E9", "#0284C7"],
@@ -103,24 +104,24 @@ export default function SupportScreen({ navigation }) {
       subtitle: "Step-by-step tutorials",
       action: () => navigation.navigate("UserGuide"),
     },
-    {
-      icon: "play-circle-outline",
-      title: "Video Tutorials",
-      subtitle: "Watch how-to videos",
-      action: () => navigation.navigate("VideoTutorials"),
-    },
-    {
-      icon: "document-text-outline",
-      title: "Terms & Conditions",
-      subtitle: "Read our policies",
-      action: () => navigation.navigate("Terms"),
-    },
-    {
-      icon: "shield-checkmark-outline",
-      title: "Privacy Policy",
-      subtitle: "Your data protection",
-      action: () => navigation.navigate("Privacy"),
-    },
+    // {
+    //   icon: "play-circle-outline",
+    //   title: "Video Tutorials",
+    //   subtitle: "Watch how-to videos",
+    //   action: () => navigation.navigate("VideoTutorials"),
+    // },
+    // {
+    //   icon: "document-text-outline",
+    //   title: "Terms & Conditions",
+    //   subtitle: "Read our policies",
+    //   action: () => navigation.navigate("Terms"),
+    // },
+    // {
+    //   icon: "shield-checkmark-outline",
+    //   title: "Privacy Policy",
+    //   subtitle: "Your data protection",
+    //   action: () => navigation.navigate("Privacy"),
+    // },
   ];
 
   const handleSubmitQuery = async () => {
@@ -524,15 +525,27 @@ export default function SupportScreen({ navigation }) {
                     />
                   </View>
 
-                  <TouchableOpacity onPress={handleSubmitQuery}>
+                  <TouchableOpacity
+                    onPress={handleSubmitQuery}
+                    disabled={loading}
+                    activeOpacity={loading ? 1 : 0.7}
+                  >
                     <LinearGradient
-                      colors={["#0EA5E9", "#0284C7"]}
+                      colors={
+                        loading
+                          ? ["#9CA3AF", "#6B7280"]
+                          : ["#0EA5E9", "#0284C7"]
+                      }
                       className="rounded-xl p-4 flex-row items-center justify-center"
                       style={{ borderRadius: 12 }}
                     >
-                      <Ionicons name="send" size={20} color="white" />
+                      {loading ? (
+                        <ActivityIndicator color="white" size="small" />
+                      ) : (
+                        <Ionicons name="send" size={20} color="white" />
+                      )}
                       <Text className="text-white font-bold ml-2 text-base">
-                        Submit Query
+                        {loading ? "Submitting..." : "Submit Query"}
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>

@@ -18,7 +18,6 @@ import Toast from "react-native-toast-message";
 
 // Import our reusable components
 import AppHeader from "@/src/components/Auth/AppHeader";
-import RoleCard from "@/src/components/RoleCard";
 import LoginForm from "./LoginForm";
 import Loading from "@/src/components/Loading";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";

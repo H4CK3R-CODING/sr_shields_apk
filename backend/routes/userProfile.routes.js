@@ -2,9 +2,9 @@
 import express from "express";
 import {
   changePassword,
-  deleteUserAccount,
-  getUserProfile,
-  updateUserProfile,
+  deleteAccount,
+  getProfile,
+  updateProfile,
 } from "../controllers/userController.js";
 import { protect } from "../middleware/auth.middleware.js";
 
@@ -16,9 +16,9 @@ router.use(protect);
 // Profile routes
 router
   .route("/profile")
-  .get(getUserProfile) // Get user profile
-  .put(updateUserProfile) // Update user profile
-  .delete(deleteUserAccount); // Delete user account
+  .get(getProfile) // Get user profile
+  .put(updateProfile) // Update user profile
+  .delete(deleteAccount); // Delete user account
 
 // Change password route
 router.put("/change-password", changePassword);

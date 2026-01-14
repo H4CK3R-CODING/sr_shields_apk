@@ -20,6 +20,13 @@ const useAuthStore = create((set, get) => ({
   isLoading: true, // Important: Start as true for initial load
   token: null,
 
+  setUser: (userData) =>
+    set({
+      user: userData,
+      role: userData?.role || null,
+      isLoggedIn: true,
+    }),
+
   // Initialize - Check AsyncStorage on app start
   initialize: async () => {
     try {
@@ -97,13 +104,11 @@ const useAuthStore = create((set, get) => ({
       });
 
       console.log("✅ Login successful:", user?.email);
-      
 
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
       console.error("❌ Login error:", error);
-      
 
       // Handle different error responses
       const errorMessage =
@@ -118,19 +123,18 @@ const useAuthStore = create((set, get) => ({
     try {
       set({ isLoading: true });
 
-      const {data} = await api.post("/auth/register", {
+      const { data } = await api.post("/auth/register", {
         ...userData,
         password,
       });
 
       set({ isLoading: false });
       console.log("Registration successful:", data);
-      
+
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
       console.error("Registration error:", error);
-      
 
       return { success: false, error: error.message };
     }
@@ -155,6 +159,7 @@ const useAuthStore = create((set, get) => ({
       console.error("❌ Logout error:", error);
     }
   },
+
   // Update Profile
   updateProfile: async (updatedData) => {
     try {
