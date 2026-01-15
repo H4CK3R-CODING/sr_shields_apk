@@ -9,13 +9,14 @@ import NotificationsScreen from "../screens/User/NotificationsScreen";
 import NoticesScreen from "../screens/User/NoticesScreen";
 import JobsScreen from "../screens/User/JobsScreen";
 import FormsScreen from "../screens/User/FormsScreen";
-import NoticeDetailScreen from "../screens/User/NoticeDetailScreen";
-import JobDetailScreen from "../screens/User/JobDetailScreen";
+// import NoticeDetailScreen from "../screens/User/NoticeDetailScreen";
+// import JobDetailScreen from "../screens/User/JobDetailScreen";
 // import FormDetailScreen from "../screens/User/FormDetailScreen";
 import SettingsScreen from "../screens/Settings/SettingsScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import HelpSupportScreen from "../screens/Support/HelpSupportScreen";
 import JobsFormsScreen from "../screens/User/JobsFormsScreen";
+import AboutScreen from "../screens/Public/AboutScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -55,16 +56,16 @@ export default function UserNavigator({ role }) {
         component={FormsScreen}
         options={{ title: "Forms" }}
       /> */}
-      <Drawer.Screen 
+      {/* <Drawer.Screen 
         name="NoticeDetail" 
         component={NoticeDetailScreen}
         options={{ drawerItemStyle: { display: 'none' } }}
-      />
-      <Drawer.Screen 
+      /> */}
+      {/* <Drawer.Screen 
         name="JobDetail" 
         component={JobDetailScreen}
         options={{ drawerItemStyle: { display: 'none' } }}
-      />
+      /> */}
       {/* <Drawer.Screen 
         name="FormDetail" 
         component={FormDetailScreen}
@@ -73,6 +74,7 @@ export default function UserNavigator({ role }) {
       <Drawer.Screen name="Profile" component={ProfileScreen} />
       <Drawer.Screen name="Settings" component={SettingsScreen} />
       <Drawer.Screen name="HelpSupport" component={HelpSupportScreen} />
+      <Drawer.Screen name="About" component={AboutScreen} />
     </Drawer.Navigator>
   );
 }

@@ -17,7 +17,6 @@ import CustomHeader from "../../components/CustomHeader";
 
 export default function NotificationsScreen({ navigation }) {
   const [notifications, setNotifications] = useState([]);
-  const [readNotifications, setReadNotifications] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState("all"); // all, unread, high, normal, low
@@ -37,10 +36,6 @@ export default function NotificationsScreen({ navigation }) {
 
       if (data.success) {
         setNotifications(data.notifications || []);
-        // If backend returns readNotifications array, use it
-        if (data.readNotifications && Array.isArray(data.readNotifications)) {
-          setReadNotifications(data.readNotifications);
-        }
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -58,18 +53,19 @@ export default function NotificationsScreen({ navigation }) {
     setRefreshing(false);
   };
 
-  // Check if notification is read
-  const isRead = (notificationId) => {
-    return readNotifications.includes(notificationId);
-  };
+  const isRead = (item) => item.isRead;
 
   // Mark notification as read
-  const markAsRead = async (notificationId) => {
+  const markAsRead = async (item) => {
     try {
-      const { data } = await api.put(`/notifications/${notificationId}/read`);
+      const { data } = await api.put(
+        `/notifications/${item.notification._id}/read`
+      );
 
       if (data.success) {
-        setReadNotifications([...readNotifications, notificationId]);
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === item._id ? { ...n, isRead: true } : n))
+        );
       }
     } catch (error) {
       console.error("Error marking notification as read:", error);
@@ -82,16 +78,16 @@ export default function NotificationsScreen({ navigation }) {
 
     switch (filterType) {
       case "unread":
-        filtered = filtered.filter((n) => !isRead(n._id));
+        filtered = filtered.filter((n) => !n.isRead);
         break;
       case "high":
-        filtered = filtered.filter((n) => n.priority === "high");
+        filtered = filtered.filter((n) => n.notification.priority === "high");
         break;
       case "normal":
-        filtered = filtered.filter((n) => n.priority === "normal");
+        filtered = filtered.filter((n) => n.notification.priority === "normal");
         break;
       case "low":
-        filtered = filtered.filter((n) => n.priority === "low");
+        filtered = filtered.filter((n) => n.notification.priority === "low");
         break;
       default:
         // all - no filter
@@ -106,15 +102,15 @@ export default function NotificationsScreen({ navigation }) {
   // Get counts for each filter
   const counts = {
     all: notifications.length,
-    unread: notifications.filter((n) => !isRead(n._id)).length,
+    unread: notifications.filter((n) => !n.isRead).length,
     high: notifications.filter((n) => n.priority === "high").length,
     normal: notifications.filter((n) => n.priority === "normal").length,
     low: notifications.filter((n) => n.priority === "low").length,
   };
 
   // Handle notification tap
-  const handleNotificationTap = async (notification) => {
-    setSelectedNotification(notification);
+  const handleNotificationTap = async (item) => {
+    setSelectedNotification(item);
     setModalVisible(true);
 
     // Fade in animation
@@ -125,8 +121,8 @@ export default function NotificationsScreen({ navigation }) {
     }).start();
 
     // Mark as read if unread
-    if (!isRead(notification._id)) {
-      await markAsRead(notification._id);
+    if (!item.isRead) {
+      await markAsRead(item);
     }
   };
 
@@ -152,8 +148,8 @@ export default function NotificationsScreen({ navigation }) {
       // Mark all unread notifications as read
       const unreadNotifications = notifications.filter((n) => !isRead(n._id));
 
-      for (const notification of unreadNotifications) {
-        await markAsRead(notification._id);
+      for (const item of notifications.filter((n) => !n.isRead)) {
+        await markAsRead(item);
       }
 
       setMarkAllModalVisible(false);
@@ -245,15 +241,7 @@ export default function NotificationsScreen({ navigation }) {
   // Loading state
   if (loading) {
     return (
-      <View className="flex-1 bg-gray-50 dark:bg-gray-900">
-        <CustomHeader title="Notifications" showBack showMenu />
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text className="text-gray-500 dark:text-gray-400 mt-4">
-            Loading notifications...
-          </Text>
-        </View>
-      </View>
+      <NotificationSkeleton />
     );
   }
 
@@ -370,14 +358,16 @@ export default function NotificationsScreen({ navigation }) {
             </Text>
           </View>
         ) : (
-          filteredNotifications.map((notification, index) => {
-            const colors = getPriorityColor(notification.priority);
-            const isUnread = !isRead(notification._id);
+          filteredNotifications.map((item, index) => {
+            // console.log("Rendering notification:", item);
+            const colors = getPriorityColor(item.notification.priority);
+            const isUnread = !item.isRead;
+
 
             return (
               <TouchableOpacity
-                key={notification._id}
-                onPress={() => handleNotificationTap(notification)}
+                key={item._id}
+                onPress={() => handleNotificationTap(item)}
                 activeOpacity={0.7}
                 className={`bg-white dark:bg-gray-800 rounded-xl mb-3 shadow-sm overflow-hidden ${
                   isUnread ? `border-l-4 ${colors.border}` : ""
@@ -396,7 +386,7 @@ export default function NotificationsScreen({ navigation }) {
                       className={`${colors.bg} w-12 h-12 rounded-xl items-center justify-center mr-3`}
                     >
                       <Ionicons
-                        name={getPriorityIcon(notification.priority)}
+                        name={getPriorityIcon(item.notification.priority)}
                         size={24}
                         color="white"
                       />
@@ -410,11 +400,11 @@ export default function NotificationsScreen({ navigation }) {
                           <Text
                             className={`${colors.text} text-xs font-bold uppercase`}
                           >
-                            {notification.priority}
+                            {item.notification.priority}
                           </Text>
                         </View>
                         <Text className="text-gray-400 text-xs ml-2">
-                          • {getRelativeTime(notification.createdAt)}
+                          • {getRelativeTime(item.createdAt)}
                         </Text>
                       </View>
 
@@ -426,7 +416,7 @@ export default function NotificationsScreen({ navigation }) {
                             : "text-gray-600 dark:text-gray-400"
                         }`}
                       >
-                        {notification.title}
+                        {item.notification.title}
                       </Text>
 
                       {/* Message Preview */}
@@ -434,7 +424,7 @@ export default function NotificationsScreen({ navigation }) {
                         className="text-gray-600 dark:text-gray-400 text-sm"
                         numberOfLines={2}
                       >
-                        {notification.message}
+                        {item.notification.message}
                       </Text>
                     </View>
 
@@ -450,7 +440,7 @@ export default function NotificationsScreen({ navigation }) {
                   <View className="flex-row items-center pt-3 border-t border-gray-100 dark:border-gray-700">
                     <Ionicons name="time-outline" size={14} color="#9CA3AF" />
                     <Text className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                      {new Date(notification.createdAt).toLocaleString()}
+                      {new Date(item.notification.createdAt).toLocaleString()}
                     </Text>
                     {isUnread && (
                       <>
@@ -684,3 +674,147 @@ export default function NotificationsScreen({ navigation }) {
     </View>
   );
 }
+
+
+
+// Professional Skeleton Loading Component
+const NotificationSkeleton = () => {
+  const animatedValue = new Animated.Value(0);
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  const SkeletonBox = ({ width, height, style }) => (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: "#E5E7EB",
+          borderRadius: 8,
+          opacity,
+        },
+        style,
+      ]}
+      className="dark:bg-gray-700"
+    />
+  );
+
+  return (
+    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+      <CustomHeader title="Notifications" showBack showMenu />
+
+      {/* Stats Banner Skeleton */}
+      <View className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm">
+        <View className="flex-row justify-between items-center">
+          <View>
+            <SkeletonBox width={60} height={32} style={{ marginBottom: 8, borderRadius: 8 }} />
+            <SkeletonBox width={120} height={16} style={{ borderRadius: 6 }} />
+          </View>
+          <View>
+            <SkeletonBox width={60} height={32} style={{ marginBottom: 8, borderRadius: 8 }} />
+            <SkeletonBox width={80} height={16} style={{ borderRadius: 6 }} />
+          </View>
+          <View>
+            <SkeletonBox width={60} height={32} style={{ marginBottom: 8, borderRadius: 8 }} />
+            <SkeletonBox width={70} height={16} style={{ borderRadius: 6 }} />
+          </View>
+        </View>
+      </View>
+
+      {/* Filter Tabs Skeleton */}
+      <View className="bg-white dark:bg-gray-800 px-4 py-3 shadow-sm">
+        <View className="flex-row">
+          {[1, 2, 3, 4].map((item) => (
+            <SkeletonBox
+              key={item}
+              width={90}
+              height={36}
+              style={{ marginRight: 8, borderRadius: 18 }}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Notification Cards Skeleton */}
+      <View className="flex-1 px-4 py-4">
+        {[1, 2, 3, 4, 5].map((item) => (
+          <View
+            key={item}
+            className="bg-white dark:bg-gray-800 rounded-xl mb-3 shadow-sm p-4"
+          >
+            {/* Header */}
+            <View className="flex-row items-start mb-3">
+              {/* Icon */}
+              <SkeletonBox
+                width={48}
+                height={48}
+                style={{ marginRight: 12, borderRadius: 12 }}
+              />
+
+              {/* Content */}
+              <View className="flex-1">
+                {/* Priority Badge and Time */}
+                <View className="flex-row items-center mb-2">
+                  <SkeletonBox width={60} height={20} style={{ borderRadius: 4 }} />
+                  <SkeletonBox
+                    width={80}
+                    height={14}
+                    style={{ marginLeft: 8, borderRadius: 4 }}
+                  />
+                </View>
+
+                {/* Title */}
+                <SkeletonBox
+                  width="100%"
+                  height={18}
+                  style={{ marginBottom: 8, borderRadius: 6 }}
+                />
+
+                {/* Message Preview */}
+                <SkeletonBox
+                  width="90%"
+                  height={14}
+                  style={{ marginBottom: 4, borderRadius: 4 }}
+                />
+                <SkeletonBox width="70%" height={14} style={{ borderRadius: 4 }} />
+              </View>
+
+              {/* Arrow */}
+              <SkeletonBox
+                width={20}
+                height={20}
+                style={{ marginLeft: 8, borderRadius: 4 }}
+              />
+            </View>
+
+            {/* Footer */}
+            <View className="flex-row items-center pt-3 border-t border-gray-100 dark:border-gray-700">
+              <SkeletonBox width={140} height={12} style={{ borderRadius: 4 }} />
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+};
+

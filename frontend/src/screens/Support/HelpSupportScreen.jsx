@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ScrollView,
   View,
@@ -16,14 +16,23 @@ import NavLayout from "@/src/components/Navbar/NavLayout";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { api } from "@/src/services/api";
 import Toast from "react-native-toast-message";
+import { useFocusEffect } from "@react-navigation/native";
 
-export default function SupportScreen({ navigation }) {
+export default function SupportScreen({ navigation,route }) {
+  // const route = useRoute();
+
   const [activeTab, setActiveTab] = useState("contact");
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setActiveTab(route?.params?.initialTab || "contact");
+    }, [route?.params?.initialTab])
+  );
 
   const contactMethods = [
     {

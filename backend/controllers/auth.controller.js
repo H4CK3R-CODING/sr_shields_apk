@@ -219,6 +219,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
+
 // @desc    Get current user profile
 // @route   GET /api/auth/profile
 // @access  Private

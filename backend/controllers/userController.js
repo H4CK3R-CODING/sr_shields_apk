@@ -1,5 +1,78 @@
 // controllers/userController.js
-import User from '../models/User.js';
+import { success } from "zod";
+import User from "../models/User.js";
+
+// Save Expo Push Token
+export const savePushToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Push token is required",
+      });
+    }
+
+    await User.findByIdAndUpdate(req.user.id, {
+      expoPushToken: token,
+    });
+
+    res.json({
+      success: true,
+      message: "Push token saved",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to save push token",
+    });
+  }
+};
+
+// Clear Expo Push Token
+export const clearPushToken = async (req, res) => {
+  await User.findByIdAndUpdate(req.user.id, {
+    expoPushToken: null,
+  });
+  // res.cookie("jwt", "", { maxAge: 0 });
+  res.status(201).json({ success: true, msg: "Logged out successfully." });
+};
+
+export const updateNotificationPreference = async (req, res) => {
+  try {
+    const { push, email } = req.body;
+
+    const updateFields = {};
+
+    if (typeof push === "boolean") {
+      updateFields["notificationPreferences.push.enabled"] = push;
+    }
+
+    if (typeof email === "boolean") {
+      updateFields["notificationPreferences.email.enabled"] = email;
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid preference provided",
+      });
+    }
+
+    await User.findByIdAndUpdate(req.user.id, updateFields);
+
+    res.json({
+      success: true,
+      message: "Notification preferences updated",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update notification preferences",
+    });
+  }
+};
 
 // Get all users (Admin only)
 export const getAllUsers = async (req, res) => {
@@ -8,23 +81,23 @@ export const getAllUsers = async (req, res) => {
 
     // Build filter query
     let filter = {};
-    
+
     // Filter by role
     if (role) {
       filter.role = role;
     }
-    
+
     // Filter by active status
     if (isActive !== undefined) {
-      filter.isActive = isActive === 'true';
+      filter.isActive = isActive === "true";
     }
-    
+
     // Search by name, email, or phone
     if (search) {
       filter.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } }
+        { fullName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -33,7 +106,7 @@ export const getAllUsers = async (req, res) => {
 
     // Get users with pagination
     const users = await User.find(filter)
-      .select('-password')
+      .select("-password")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -43,10 +116,13 @@ export const getAllUsers = async (req, res) => {
 
     // Get statistics
     const stats = {
-      totalUsers: await User.countDocuments({ role: 'user' }),
-      activeUsers: await User.countDocuments({ role: 'user', isActive: true }),
-      inactiveUsers: await User.countDocuments({ role: 'user', isActive: false }),
-      totalAdmins: await User.countDocuments({ role: 'admin' }),
+      totalUsers: await User.countDocuments({ role: "user" }),
+      activeUsers: await User.countDocuments({ role: "user", isActive: true }),
+      inactiveUsers: await User.countDocuments({
+        role: "user",
+        isActive: false,
+      }),
+      totalAdmins: await User.countDocuments({ role: "admin" }),
     };
 
     res.status(200).json({
@@ -56,14 +132,14 @@ export const getAllUsers = async (req, res) => {
       page: parseInt(page),
       totalPages: Math.ceil(total / limit),
       stats,
-      users
+      users,
     });
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error("Error fetching users:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching users',
-      error: error.message
+      message: "Error fetching users",
+      error: error.message,
     });
   }
 };
@@ -73,25 +149,25 @@ export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const user = await User.findById(id).select('-password');
+    const user = await User.findById(id).select("-password");
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      user
+      user,
     });
   } catch (error) {
-    console.error('Error fetching user:', error);
+    console.error("Error fetching user:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching user',
-      error: error.message
+      message: "Error fetching user",
+      error: error.message,
     });
   }
 };
@@ -106,15 +182,15 @@ export const toggleUserStatus = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
     // Don't allow deactivating admins
-    if (user.role === 'admin') {
+    if (user.role === "admin") {
       return res.status(403).json({
         success: false,
-        message: 'Cannot deactivate admin users'
+        message: "Cannot deactivate admin users",
       });
     }
 
@@ -124,20 +200,22 @@ export const toggleUserStatus = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: `User ${user.isActive ? 'activated' : 'deactivated'} successfully`,
+      message: `User ${
+        user.isActive ? "activated" : "deactivated"
+      } successfully`,
       user: {
         _id: user._id,
         fullName: user.fullName,
         email: user.email,
-        isActive: user.isActive
-      }
+        isActive: user.isActive,
+      },
     });
   } catch (error) {
-    console.error('Error toggling user status:', error);
+    console.error("Error toggling user status:", error);
     res.status(500).json({
       success: false,
-      message: 'Error updating user status',
-      error: error.message
+      message: "Error updating user status",
+      error: error.message,
     });
   }
 };
@@ -152,15 +230,15 @@ export const deleteUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
     // Don't allow deleting admins
-    if (user.role === 'admin') {
+    if (user.role === "admin") {
       return res.status(403).json({
         success: false,
-        message: 'Cannot delete admin users'
+        message: "Cannot delete admin users",
       });
     }
 
@@ -170,18 +248,17 @@ export const deleteUser = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'User deleted successfully'
+      message: "User deleted successfully",
     });
   } catch (error) {
-    console.error('Error deleting user:', error);
+    console.error("Error deleting user:", error);
     res.status(500).json({
       success: false,
-      message: 'Error deleting user',
-      error: error.message
+      message: "Error deleting user",
+      error: error.message,
     });
   }
 };
-
 
 /**
  * Get User/Admin Profile
@@ -210,6 +287,7 @@ export const getProfile = async (req, res) => {
       role: user.role,
       isActive: user.isActive,
       isEmailVerified: user.isEmailVerified,
+      notificationPreferences: user.notificationPreferences,
       lastLogin: user.lastLogin,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -248,7 +326,8 @@ export const getProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { fullName, phone, address, dateOfBirth, gender, department } = req.body;
+    const { fullName, phone, address, dateOfBirth, gender, department } =
+      req.body;
 
     // Find user
     const user = await User.findById(userId);

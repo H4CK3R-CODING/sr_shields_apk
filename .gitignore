@@ -22,11 +22,11 @@ expo-env.d.ts
 .cursor/
 
 # Generated native folders
-/ios
-/android
-android/.gradle/
-android/build/
-ios/DerivedData/
+*/ios
+*/android
+*/android/.gradle/
+*/android/build/
+*/ios/DerivedData/
 
 # ---------------------
 # Native / Certificates

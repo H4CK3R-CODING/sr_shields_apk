@@ -28,7 +28,7 @@ export default function PublizcNavigator() {
     >
       <Drawer.Screen name="Welcome" component={WelcomeScreen} />
       <Drawer.Screen name="About" component={AboutScreen} />
-      <Drawer.Screen name="Help" component={HelpSupportScreen} />
+      <Drawer.Screen name="HelpSupport" component={HelpSupportScreen} />
       <Drawer.Screen name="UserGuide" component={UserGuideScreen} />
       <Drawer.Screen name="Setting" component={SettingsScreen} />
       <Drawer.Screen name="Profile" component={ProfileScreen} />

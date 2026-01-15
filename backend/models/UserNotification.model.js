@@ -31,3 +31,4 @@ const UserNotification = mongoose.model(
 );
 
 export default UserNotification;
+

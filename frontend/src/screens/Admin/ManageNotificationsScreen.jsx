@@ -10,6 +10,8 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  Animated,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../services/api"; // Adjust path according to your project structure
@@ -18,6 +20,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 
 export default function ManageNotificationsScreen() {
   const [notifications, setNotifications] = useState([]);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [notificationToDelete, setNotificationToDelete] = useState(null);
@@ -49,6 +52,7 @@ export default function ManageNotificationsScreen() {
       );
     } finally {
       setRefreshing(false);
+      setInitialLoading(false);
     }
   };
 
@@ -67,22 +71,18 @@ export default function ManageNotificationsScreen() {
       });
 
       if (data.success) {
-        Alert.alert(
-          "Success",
-          `Notification sent to ${data.recipientCount} users!`,
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                setTitle("");
-                setMessage("");
-                setPriority("normal");
-                setModalVisible(false);
-                fetchNotifications();
-              },
+        Alert.alert("Success", `Notification posted successfully!`, [
+          {
+            text: "OK",
+            onPress: () => {
+              setTitle("");
+              setMessage("");
+              setPriority("normal");
+              setModalVisible(false);
+              fetchNotifications();
             },
-          ]
-        );
+          },
+        ]);
       } else {
         Alert.alert("Error", data.message || "Failed to create notification");
       }
@@ -146,14 +146,25 @@ export default function ManageNotificationsScreen() {
     }
   };
 
+  // Initial loading state with full skeleton
+  if (initialLoading) {
+    return <ManageNotificationsSkeleton />;
+  }
+
   return (
     <View className="flex-1 bg-gray-50 dark:bg-gray-900">
       <CustomHeader title="Manage Notifications" showBack showMenu />
 
       <ScrollView
         className="flex-1 px-4 py-4"
-        refreshing={refreshing}
-        onRefresh={fetchNotifications}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={fetchNotifications}
+            colors={["#3B82F6"]}
+            tintColor="#3B82F6"
+          />
+        }
       >
         {/* Add Button */}
         <TouchableOpacity
@@ -168,13 +179,14 @@ export default function ManageNotificationsScreen() {
 
         {/* Notifications List */}
         {refreshing ? (
-          <View className="bg-white dark:bg-gray-800 rounded-lg p-8 items-center">
-            <ActivityIndicator size="large" color="#3B82F6" />
-            <Text className="text-gray-500 dark:text-gray-400 mt-4">
-              Loading notifications...
-            </Text>
-          </View>
-        ) : notifications.length === 0 ? (
+          <RefreshingSkeleton />
+        ) : // <View className="bg-white dark:bg-gray-800 rounded-lg p-8 items-center">
+        //   <ActivityIndicator size="large" color="#3B82F6" />
+        //   <Text className="text-gray-500 dark:text-gray-400 mt-4">
+        //     Loading notifications...
+        //   </Text>
+        // </View>
+        notifications.length === 0 ? (
           <View className="bg-white dark:bg-gray-800 rounded-lg p-8 items-center">
             <Ionicons name="notifications-off" size={48} color="#9CA3AF" />
             <Text className="text-gray-500 dark:text-gray-400 mt-4">
@@ -299,7 +311,9 @@ export default function ManageNotificationsScreen() {
                 <TouchableOpacity
                   onPress={handleAddNotification}
                   disabled={loading}
-                  className="bg-blue-500 rounded-lg p-4 items-center"
+                  className={`rounded-lg p-4 items-center ${
+                    loading ? "bg-blue-300" : "bg-blue-500"
+                  }`}
                 >
                   {loading ? (
                     <ActivityIndicator color="white" />
@@ -360,3 +374,191 @@ export default function ManageNotificationsScreen() {
     </View>
   );
 }
+
+// Professional Skeleton Loading Component for Manage Notifications
+const ManageNotificationsSkeleton = () => {
+  const animatedValue = new Animated.Value(0);
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  const SkeletonBox = ({ width, height, style }) => (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: "#E5E7EB",
+          borderRadius: 8,
+          opacity,
+        },
+        style,
+      ]}
+      className="dark:bg-gray-700"
+    />
+  );
+
+  return (
+    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+      <CustomHeader title="Manage Notifications" showBack showMenu />
+
+      <ScrollView className="flex-1 px-4 py-4">
+        {/* Add Button Skeleton */}
+        <SkeletonBox
+          width="100%"
+          height={56}
+          style={{ marginBottom: 16, borderRadius: 12 }}
+        />
+
+        {/* Notification Cards Skeleton */}
+        {[1, 2, 3, 4, 5, 6].map((item) => (
+          <View
+            key={item}
+            className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-3 shadow-sm"
+          >
+            {/* Header Section */}
+            <View className="flex-row justify-between items-start mb-2">
+              <View className="flex-1">
+                {/* Priority Badge */}
+                <View className="flex-row items-center mb-2">
+                  <SkeletonBox
+                    width={70}
+                    height={24}
+                    style={{ borderRadius: 4 }}
+                  />
+                </View>
+
+                {/* Title */}
+                <SkeletonBox
+                  width="85%"
+                  height={20}
+                  style={{ marginBottom: 8, borderRadius: 6 }}
+                />
+              </View>
+
+              {/* Delete Icon Skeleton */}
+              <SkeletonBox width={20} height={20} style={{ borderRadius: 4 }} />
+            </View>
+
+            {/* Message Lines */}
+            <SkeletonBox
+              width="100%"
+              height={16}
+              style={{ marginBottom: 6, borderRadius: 4 }}
+            />
+            <SkeletonBox
+              width="90%"
+              height={16}
+              style={{ marginBottom: 12, borderRadius: 4 }}
+            />
+
+            {/* Date */}
+            <SkeletonBox width={120} height={12} style={{ borderRadius: 4 }} />
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
+
+// Enhanced Loading State Component (for refreshing)
+const RefreshingSkeleton = () => {
+  const animatedValue = new Animated.Value(0);
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  const SkeletonBox = ({ width, height, style }) => (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: "#E5E7EB",
+          borderRadius: 8,
+          opacity,
+        },
+        style,
+      ]}
+      className="dark:bg-gray-700"
+    />
+  );
+
+  return (
+    <>
+      {[1, 2, 3].map((item) => (
+        <View
+          key={item}
+          className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-3 shadow-sm"
+        >
+          <View className="flex-row justify-between items-start mb-2">
+            <View className="flex-1">
+              <View className="flex-row items-center mb-2">
+                <SkeletonBox
+                  width={70}
+                  height={24}
+                  style={{ borderRadius: 4 }}
+                />
+              </View>
+              <SkeletonBox
+                width="85%"
+                height={20}
+                style={{ marginBottom: 8, borderRadius: 6 }}
+              />
+            </View>
+            <SkeletonBox width={20} height={20} style={{ borderRadius: 4 }} />
+          </View>
+          <SkeletonBox
+            width="100%"
+            height={16}
+            style={{ marginBottom: 6, borderRadius: 4 }}
+          />
+          <SkeletonBox
+            width="90%"
+            height={16}
+            style={{ marginBottom: 12, borderRadius: 4 }}
+          />
+          <SkeletonBox width={120} height={12} style={{ borderRadius: 4 }} />
+        </View>
+      ))}
+    </>
+  );
+};

@@ -295,15 +295,16 @@ export default function JobsFormsScreen({ navigation }) {
 
   if (loading && items.length === 0) {
     return (
-      <View className="flex-1 bg-gray-50 dark:bg-gray-900">
-        <CustomHeader title="Jobs & Forms" showBack showMenu />
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text className="text-gray-500 dark:text-gray-400 mt-4">
-            Loading...
-          </Text>
-        </View>
-      </View>
+      <JobsFormsSkeleton />
+      // <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+      //   <CustomHeader title="Jobs & Forms" showBack showMenu />
+      //   <View className="flex-1 justify-center items-center">
+      //     <ActivityIndicator size="large" color="#3B82F6" />
+      //     <Text className="text-gray-500 dark:text-gray-400 mt-4">
+      //       Loading...
+      //     </Text>
+      //   </View>
+      // </View>
     );
   }
 
@@ -1094,3 +1095,181 @@ export default function JobsFormsScreen({ navigation }) {
     </View>
   );
 }
+
+
+// Professional Skeleton Loading Component for Jobs & Forms
+const JobsFormsSkeleton = () => {
+  const animatedValue = new Animated.Value(0);
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  const SkeletonBox = ({ width, height, style }) => (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: "#E5E7EB",
+          borderRadius: 8,
+          opacity,
+        },
+        style,
+      ]}
+      className="dark:bg-gray-700"
+    />
+  );
+
+  return (
+    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+      <CustomHeader title="Jobs & Forms" showBack showMenu />
+
+      {/* Tab Switcher Skeleton */}
+      <View className="bg-white dark:bg-gray-800 px-4 py-3">
+        <View className="bg-gray-100 dark:bg-gray-700 rounded-xl p-1 flex-row">
+          <SkeletonBox width="50%" height={48} style={{ borderRadius: 8, marginRight: 4 }} />
+          <SkeletonBox width="50%" height={48} style={{ borderRadius: 8 }} />
+        </View>
+      </View>
+
+      {/* Search Bar Skeleton */}
+      <View className="bg-white dark:bg-gray-800 px-4 pb-3">
+        <SkeletonBox width="100%" height={48} style={{ borderRadius: 12 }} />
+      </View>
+
+      {/* Category Filter Skeleton */}
+      <View className="bg-white dark:bg-gray-800 px-4 py-3 shadow-sm">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View className="flex-row">
+            {[1, 2, 3, 4, 5].map((item) => (
+              <SkeletonBox
+                key={item}
+                width={110}
+                height={40}
+                style={{ marginRight: 12, borderRadius: 20 }}
+              />
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+
+      {/* Job/Form Cards Skeleton */}
+      <ScrollView className="flex-1 px-4 py-4">
+        {[1, 2, 3, 4].map((item) => (
+          <View
+            key={item}
+            className="bg-white dark:bg-gray-800 rounded-2xl mb-4 shadow-md overflow-hidden"
+          >
+            {/* Featured Badge Skeleton */}
+            <View className="px-4 py-2.5 bg-gray-200 dark:bg-gray-700">
+              <View className="flex-row justify-between items-center">
+                <SkeletonBox width={120} height={16} style={{ borderRadius: 4 }} />
+                <SkeletonBox width={80} height={16} style={{ borderRadius: 4 }} />
+              </View>
+            </View>
+
+            <View className="p-5">
+              {/* Header Section */}
+              <View className="flex-row items-start mb-3">
+                {/* Icon */}
+                <SkeletonBox
+                  width={56}
+                  height={56}
+                  style={{ marginRight: 16, borderRadius: 16 }}
+                />
+
+                {/* Content */}
+                <View className="flex-1">
+                  {/* Title */}
+                  <SkeletonBox
+                    width="90%"
+                    height={20}
+                    style={{ marginBottom: 12, borderRadius: 6 }}
+                  />
+
+                  {/* Organization/Location */}
+                  <View className="flex-row items-center mb-2">
+                    <SkeletonBox
+                      width={14}
+                      height={14}
+                      style={{ marginRight: 6, borderRadius: 3 }}
+                    />
+                    <SkeletonBox width={150} height={14} style={{ borderRadius: 4 }} />
+                  </View>
+
+                  <View className="flex-row items-center mb-2">
+                    <SkeletonBox
+                      width={14}
+                      height={14}
+                      style={{ marginRight: 6, borderRadius: 3 }}
+                    />
+                    <SkeletonBox width={120} height={14} style={{ borderRadius: 4 }} />
+                  </View>
+
+                  {/* Description Lines */}
+                  <SkeletonBox
+                    width="100%"
+                    height={14}
+                    style={{ marginBottom: 6, borderRadius: 4 }}
+                  />
+                  <SkeletonBox width="75%" height={14} style={{ borderRadius: 4 }} />
+
+                  {/* Attachment Badge */}
+                  <View className="mt-3">
+                    <SkeletonBox
+                      width={90}
+                      height={32}
+                      style={{ borderRadius: 8 }}
+                    />
+                  </View>
+                </View>
+
+                {/* Arrow */}
+                <SkeletonBox
+                  width={22}
+                  height={22}
+                  style={{ borderRadius: 4 }}
+                />
+              </View>
+
+              {/* Footer Section */}
+              <View className="flex-row items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+                <View className="flex-row items-center">
+                  <SkeletonBox width={80} height={28} style={{ borderRadius: 8 }} />
+                  <SkeletonBox
+                    width={4}
+                    height={4}
+                    style={{ marginHorizontal: 12, borderRadius: 2 }}
+                  />
+                  <SkeletonBox width={70} height={14} style={{ borderRadius: 4 }} />
+                </View>
+
+                <SkeletonBox width={100} height={24} style={{ borderRadius: 6 }} />
+              </View>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
+

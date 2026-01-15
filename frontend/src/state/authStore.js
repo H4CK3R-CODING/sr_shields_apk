@@ -1,7 +1,7 @@
 // src/state/authStore.js
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { registerPushToken } from "../utils/registerPushToken";
 // api/axios.js
 import axios from "axios";
 
@@ -20,12 +20,32 @@ const useAuthStore = create((set, get) => ({
   isLoading: true, // Important: Start as true for initial load
   token: null,
 
-  setUser: (userData) =>
+  setUser: async (userData) => {
+    const prevState = get() || {};
+
+    const mergedUser = {
+      ...prevState.user,
+      ...userData,
+    };
+
     set({
-      user: userData,
-      role: userData?.role || null,
+      ...prevState,
+      user: mergedUser,
+      role: mergedUser?.role || null,
       isLoggedIn: true,
-    }),
+    });
+
+    // Prepare auth data
+    const authData = {
+      ...prevState,
+      user: mergedUser,
+      role: mergedUser?.role,
+      isLoggedIn: true,
+    };
+
+    // Save to AsyncStorage for persistence
+    await AsyncStorage.setItem("authData", JSON.stringify(authData));
+  },
 
   // Initialize - Check AsyncStorage on app start
   initialize: async () => {
@@ -103,6 +123,8 @@ const useAuthStore = create((set, get) => ({
         isLoading: false,
       });
 
+      await registerPushToken();
+
       console.log("✅ Login successful:", user?.email);
 
       return { success: true };
@@ -143,6 +165,11 @@ const useAuthStore = create((set, get) => ({
   // Logout
   logout: async () => {
     try {
+
+      const authData = await AsyncStorage.getItem("authData");
+      const token = authData ? JSON.parse(authData).token : null;
+
+
       // Clear AsyncStorage
       await AsyncStorage.removeItem("authData");
 
@@ -154,7 +181,16 @@ const useAuthStore = create((set, get) => ({
         token: null,
       });
 
-      console.log("✅ Logout successful");
+      
+      if (token) {
+        const { data } = await api.get("/user/clear-push-token", {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("✅ Logout successful", data);
+      }
     } catch (error) {
       console.error("❌ Logout error:", error);
     }

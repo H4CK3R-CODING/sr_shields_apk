@@ -42,18 +42,31 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
-    notifications: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Notification",
+    notificationPreferences: {
+      push: {
+        enabled: { type: Boolean, default: true },
       },
-    ],
-    readNotifications: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Notification",
+      email: {
+        enabled: { type: Boolean, default: true },
       },
-    ],
+    },
+    expoPushToken: {
+      type: String,
+      default: null,
+    },
+
+    // notifications: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "Notification",
+    //   },
+    // ],
+    // readNotifications: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "Notification",
+    //   },
+    // ],
 
     // Admin specific fields
     // adminCode: {

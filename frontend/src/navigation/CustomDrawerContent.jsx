@@ -111,7 +111,11 @@ const CustomDrawerContent = ({ navigation, role }) => {
       {
         section: "MAIN",
         items: [
-          { iconName: "home-outline", label: "Dashboard", screen: "AdminDashboard" },
+          {
+            iconName: "home-outline",
+            label: "Dashboard",
+            screen: "AdminDashboard",
+          },
           {
             iconName: "notifications-outline",
             label: "Manage Notifications",
@@ -127,7 +131,11 @@ const CustomDrawerContent = ({ navigation, role }) => {
             label: "Manage Jobs / Forms",
             screen: "ManageJobsForms",
           },
-          { iconName: "people-outline", label: "Users", screen: "ManageUsersScreen" },
+          {
+            iconName: "people-outline",
+            label: "Users",
+            screen: "ManageUsersScreen",
+          },
         ],
       },
       {
@@ -158,7 +166,7 @@ const CustomDrawerContent = ({ navigation, role }) => {
     { iconName: "home-outline", label: "Home", screen: "Welcome" },
     { iconName: "information-circle-outline", label: "About", screen: "About" },
     { iconName: "cog", label: "Setting", screen: "Setting" },
-    { iconName: "headset", label: "Help", screen: "Help" },
+    { iconName: "headset", label: "Help", screen: "HelpSupport" },
     { iconName: "log-in-outline", label: "Login", screen: "Login" },
     { iconName: "person-add-outline", label: "Register", screen: "Register" },
   ];
@@ -183,8 +191,8 @@ const CustomDrawerContent = ({ navigation, role }) => {
 
   // ---------- Profile Info ----------
   const profileData = {
-    user: { name: "John Doe", email: "john.doe@email.com" },
-    admin: { name: "Admin User", email: "admin@system.com" },
+    user: { name: user?.fullName, email: user?.email },
+    admin: { name: user?.fullName, email: user?.email },
   };
 
   return (
@@ -198,8 +206,7 @@ const CustomDrawerContent = ({ navigation, role }) => {
           <Ionicons name="close" size={24} color="#6B7280" />
         </TouchableOpacity>
 
-
-        <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+        <Text className="text-xl font-bold text-gray-900 dark:text-white mb-1">
           {isLoggedIn
             ? profileData[role]?.name || role.toUpperCase()
             : "Welcome!"}
@@ -209,9 +216,31 @@ const CustomDrawerContent = ({ navigation, role }) => {
             ? profileData[role]?.email || `Logged in as ${role}`
             : "Please login or register to continue"}
         </Text>
-
-
-        <View className="flex-row justify-around">
+        {isLoggedIn && (
+          <View className="flex-row items-center mt-1 flex-wrap">
+            <View
+              className={`px-3 py-1.5 rounded-full ${
+                role === "admin"
+                  ? "bg-purple-100 dark:bg-purple-900/30"
+                  : "bg-blue-100 dark:bg-blue-900/30"
+              }`}
+              style={{ maxWidth: "100%" }}
+            >
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                className={`text-xs font-bold capitalize ${
+                  role === "admin"
+                    ? "text-purple-700 dark:text-purple-400"
+                    : "text-blue-700 dark:text-blue-400"
+                }`}
+              >
+                {role === "admin" ? "🛡️ Administrator" : "👤 User"}
+              </Text>
+            </View>
+          </View>
+        )}
+        <View className="flex-row justify-around mt-3">
           {role === "user" && (
             <>
               <QuickAction
@@ -222,16 +251,16 @@ const CustomDrawerContent = ({ navigation, role }) => {
                 colorEnd="to-blue-600"
               />
               <QuickAction
-                icon="calendar-outline"
-                label="Appointments"
-                onPress={() => navigation.navigate("Appointments")}
+                icon="notifications-outline"
+                label="Notifications"
+                onPress={() => navigation.navigate("Notifications")}
                 colorStart="from-green-500"
                 colorEnd="to-green-600"
               />
               <QuickAction
-                icon="fitness-outline"
-                label="Health Metrics"
-                onPress={() => navigation.navigate("HealthMetrics")}
+                icon="briefcase-outline"
+                label="Jobs & Forms"
+                onPress={() => navigation.navigate("JobsFormsScreen")}
                 colorStart="from-purple-500"
                 colorEnd="to-purple-600"
               />

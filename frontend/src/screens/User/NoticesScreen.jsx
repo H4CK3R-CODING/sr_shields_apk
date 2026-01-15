@@ -1,4 +1,4 @@
-// src/screens/User/NoticesScreen.jsx (Enhanced with Beautiful Modal & Fixed Filters)
+// src/screens/User/NoticesScreen.jsx (Enhanced with Skeleton Loading)
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -21,6 +21,117 @@ import { api } from "../../services/api";
 import CustomHeader from "../../components/CustomHeader";
 
 const { width } = Dimensions.get("window");
+
+// Skeleton Loading Component
+const SkeletonLoader = () => {
+  const [fadeAnim] = useState(new Animated.Value(0.3));
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
+  return (
+    <View className="px-4 py-4">
+      {[1, 2, 3, 4].map((item) => (
+        <Animated.View
+          key={item}
+          style={{ opacity: fadeAnim }}
+          className="bg-white dark:bg-gray-800 rounded-2xl mb-4 p-5 shadow-md"
+        >
+          {/* Header Row */}
+          <View className="flex-row items-start mb-3">
+            {/* Icon Skeleton */}
+            <View className="w-14 h-14 rounded-2xl bg-gray-200 dark:bg-gray-700 mr-4" />
+
+            <View className="flex-1">
+              {/* Priority and Time Skeleton */}
+              <View className="flex-row items-center mb-2">
+                <View className="w-20 h-6 rounded-full bg-gray-200 dark:bg-gray-700 mr-2" />
+                <View className="w-16 h-4 rounded bg-gray-200 dark:bg-gray-700" />
+              </View>
+
+              {/* Title Skeleton */}
+              <View className="w-full h-5 rounded bg-gray-200 dark:bg-gray-700 mb-2" />
+              <View className="w-3/4 h-5 rounded bg-gray-200 dark:bg-gray-700 mb-3" />
+
+              {/* Description Skeleton */}
+              <View className="w-full h-4 rounded bg-gray-200 dark:bg-gray-700 mb-2" />
+              <View className="w-5/6 h-4 rounded bg-gray-200 dark:bg-gray-700 mb-3" />
+
+              {/* Attachment Badge Skeleton */}
+              <View className="w-28 h-8 rounded-lg bg-gray-200 dark:bg-gray-700" />
+            </View>
+
+            {/* Chevron Skeleton */}
+            <View className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700" />
+          </View>
+
+          {/* Footer Row Skeleton */}
+          <View className="flex-row items-center pt-3 border-t border-gray-100 dark:border-gray-700">
+            <View className="w-20 h-7 rounded-lg bg-gray-200 dark:bg-gray-700" />
+            <View className="w-1.5 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-3" />
+            <View className="w-16 h-4 rounded bg-gray-200 dark:bg-gray-700" />
+          </View>
+        </Animated.View>
+      ))}
+    </View>
+  );
+};
+
+// Category Filter Skeleton
+const CategoryFilterSkeleton = () => {
+  const [fadeAnim] = useState(new Animated.Value(0.3));
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
+  return (
+    <View className="bg-white dark:bg-gray-800 px-4 py-3 shadow-sm">
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {[1, 2, 3, 4, 5, 6].map((item) => (
+          <Animated.View
+            key={item}
+            style={{ opacity: fadeAnim }}
+            className="mr-3 px-5 py-2.5 rounded-full bg-gray-200 dark:bg-gray-700"
+          >
+            <View className="w-20 h-5" />
+          </Animated.View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
 
 export default function NoticesScreen({ navigation }) {
   const [notices, setNotices] = useState([]);
@@ -273,12 +384,10 @@ export default function NoticesScreen({ navigation }) {
     return (
       <View className="flex-1 bg-gray-50 dark:bg-gray-900">
         <CustomHeader title="Notices" showBack showMenu />
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text className="text-gray-500 dark:text-gray-400 mt-4">
-            Loading notices...
-          </Text>
-        </View>
+        <CategoryFilterSkeleton />
+        <ScrollView className="flex-1">
+          <SkeletonLoader />
+        </ScrollView>
       </View>
     );
   }

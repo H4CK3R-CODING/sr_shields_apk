@@ -1,5 +1,5 @@
 // src/screens/Settings/SettingsScreen.jsx
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -16,28 +16,39 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import useAuthStore from "../../state/authStore";
 import useContentStore from "../../state/contentStore";
 import CustomHeader from "../../components/CustomHeader";
+import * as Notifications from "expo-notifications";
+import { api } from "../../services/api";
+import { Platform } from "react-native";
+import { ThemeContext } from "@/src/theme/ThemeProvider";
 
 export default function SettingsScreen({ navigation }) {
   const { user, role } = useAuthStore();
   const { clearAllData } = useContentStore();
+  const context = useContext(ThemeContext);
+
+  if (!context) return null;
+
+  const { theme, toggleTheme, isLoading } = context;
+
+  if (isLoading) return null;
 
   // Settings State
   const [settings, setSettings] = useState({
     // Notifications
-    pushNotifications: true,
+    pushNotifications: false,
     emailNotifications: true,
     notificationSound: true,
     vibration: true,
-    
+
     // Appearance
-    darkMode: false,
+    darkMode: theme === "dark",
     fontSize: "medium", // small, medium, large
     language: "en", // en, hi, etc.
-    
+
     // Privacy
     showOnlineStatus: true,
     readReceipts: true,
-    
+
     // Data & Storage
     autoDownload: true,
     downloadOverWifi: true,
@@ -46,16 +57,16 @@ export default function SettingsScreen({ navigation }) {
 
   const [feedbackModal, setFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
-  const [aboutModal, setAboutModal] = useState(false);
-
   // Toggle setting
   const toggleSetting = async (key) => {
+    if (key === "pushNotifications") return;
+
     const newSettings = { ...settings, [key]: !settings[key] };
     setSettings(newSettings);
-    
+
     // Save to AsyncStorage
     await AsyncStorage.setItem("appSettings", JSON.stringify(newSettings));
-    
+
     // Show feedback for certain settings
     if (key === "darkMode") {
       Alert.alert(
@@ -66,98 +77,57 @@ export default function SettingsScreen({ navigation }) {
     }
   };
 
-  // Change font size
-  const changeFontSize = (size) => {
-    setSettings({ ...settings, fontSize: size });
-    AsyncStorage.setItem("appSettings", JSON.stringify({ ...settings, fontSize: size }));
-  };
-
-  // Clear cache
-  const handleClearCache = () => {
-    Alert.alert(
-      "Clear Cache",
-      "This will clear all cached data and free up storage. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Clear cached data
-              await AsyncStorage.removeItem("cachedNotices");
-              await AsyncStorage.removeItem("cachedJobs");
-              
-              setSettings({ ...settings, cacheSize: "0 MB" });
-              Alert.alert("Success", "Cache cleared successfully");
-            } catch (error) {
-              Alert.alert("Error", "Failed to clear cache");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  // Clear all data
-  const handleClearAllData = () => {
-    Alert.alert(
-      "Clear All Data",
-      "⚠️ This will delete ALL your data including notices, jobs, and forms. This action cannot be undone!",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete All",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await clearAllData();
-              Alert.alert("Success", "All data cleared successfully");
-            } catch (error) {
-              Alert.alert("Error", "Failed to clear data");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  // Submit feedback
-  const handleSubmitFeedback = async () => {
-    if (!feedbackText.trim()) {
-      Alert.alert("Error", "Please enter your feedback");
-      return;
-    }
-
+  const handleDarkModeToggle = async (value) => {
     try {
-      // In production: Send to backend API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 1️⃣ Toggle global theme
+      toggleTheme();
 
-      setFeedbackModal(false);
-      setFeedbackText("");
-      Alert.alert("Thank You!", "Your feedback has been submitted successfully");
+      // 2️⃣ Update local settings state
+      const newSettings = { ...settings, darkMode: value };
+      setSettings(newSettings);
+
+      // 3️⃣ Persist setting
+      await AsyncStorage.setItem("appSettings", JSON.stringify(newSettings));
+
+      // Optional UX feedback
+      Alert.alert(
+        "Appearance Updated",
+        `Dark mode ${value ? "enabled" : "disabled"}`
+      );
     } catch (error) {
-      Alert.alert("Error", "Failed to submit feedback");
+      Alert.alert("Error", "Failed to update theme");
     }
   };
 
-  // Contact support
-  const handleContactSupport = () => {
-    Alert.alert(
-      "Contact Support",
-      "Choose a method to contact us",
-      [
-        {
-          text: "Email",
-          onPress: () => Linking.openURL("mailto:support@csc.edu"),
-        },
-        {
-          text: "Phone",
-          onPress: () => Linking.openURL("tel:+1234567890"),
-        },
-        { text: "Cancel", style: "cancel" },
-      ]
-    );
+  useEffect(() => {
+    syncNotificationSettings();
+  }, []);
+
+  useEffect(() => {
+    setSettings((prev) => ({
+      ...prev,
+      darkMode: theme === "dark",
+    }));
+  }, [theme]);
+
+  const syncNotificationSettings = async () => {
+    try {
+      // 1️⃣ Check OS permission
+      const permission = await Notifications.getPermissionsAsync();
+      const osEnabled = permission.status === "granted";
+
+      // 2️⃣ Fetch backend preference
+      const { data } = await api.get("/user/profile");
+      // profile should return notificationEnabled
+
+      setSettings((prev) => ({
+        ...prev,
+        pushNotifications: osEnabled && data.user.notificationPreferences.push.enabled,
+        emailNotifications: data.user.notificationPreferences.email.enabled,
+      }));
+    } catch (error) {
+      console.log("Failed to sync notification settings");
+    }
   };
 
   // Settings sections
@@ -180,20 +150,20 @@ export default function SettingsScreen({ navigation }) {
           icon: "mail-outline",
           description: "Get notified via email",
         },
-        {
-          label: "Notification Sound",
-          key: "notificationSound",
-          type: "toggle",
-          icon: "volume-high-outline",
-          description: "Play sound for notifications",
-        },
-        {
-          label: "Vibration",
-          key: "vibration",
-          type: "toggle",
-          icon: "phone-portrait-outline",
-          description: "Vibrate on notifications",
-        },
+        // {
+        //   label: "Notification Sound",
+        //   key: "notificationSound",
+        //   type: "toggle",
+        //   icon: "volume-high-outline",
+        //   description: "Play sound for notifications",
+        // },
+        // {
+        //   label: "Vibration",
+        //   key: "vibration",
+        //   type: "toggle",
+        //   icon: "phone-portrait-outline",
+        //   description: "Vibrate on notifications",
+        // },
       ],
     },
     {
@@ -207,84 +177,20 @@ export default function SettingsScreen({ navigation }) {
           icon: "moon-outline",
           description: "Use dark theme",
         },
-        {
-          label: "Font Size",
-          key: "fontSize",
-          type: "select",
-          icon: "text-outline",
-          description: "Adjust text size",
-        },
-        {
-          label: "Language",
-          key: "language",
-          type: "navigation",
-          icon: "language-outline",
-          description: "English",
-        },
-      ],
-    },
-    {
-      title: "Privacy & Security",
-      icon: "shield-checkmark",
-      items: [
-        {
-          label: "Show Online Status",
-          key: "showOnlineStatus",
-          type: "toggle",
-          icon: "radio-button-on-outline",
-          description: "Let others see when you're online",
-        },
-        {
-          label: "Read Receipts",
-          key: "readReceipts",
-          type: "toggle",
-          icon: "checkmark-done-outline",
-          description: "Send read receipts",
-        },
-        {
-          label: "Change Password",
-          key: "changePassword",
-          type: "navigation",
-          icon: "lock-closed-outline",
-          description: "Update your password",
-          onPress: () => navigation.navigate("Profile"),
-        },
-      ],
-    },
-    {
-      title: "Data & Storage",
-      icon: "server",
-      items: [
-        {
-          label: "Auto Download",
-          key: "autoDownload",
-          type: "toggle",
-          icon: "download-outline",
-          description: "Auto download attachments",
-        },
-        {
-          label: "Download Over WiFi Only",
-          key: "downloadOverWifi",
-          type: "toggle",
-          icon: "wifi-outline",
-          description: "Save mobile data",
-        },
-        {
-          label: "Cache Size",
-          key: "cacheSize",
-          type: "info",
-          icon: "albums-outline",
-          description: settings.cacheSize,
-          onPress: handleClearCache,
-        },
-        {
-          label: "Clear All Data",
-          key: "clearData",
-          type: "danger",
-          icon: "trash-outline",
-          description: "Delete all app data",
-          onPress: handleClearAllData,
-        },
+        // {
+        //   label: "Font Size",
+        //   key: "fontSize",
+        //   type: "select",
+        //   icon: "text-outline",
+        //   description: "Adjust text size",
+        // },
+        // {
+        //   label: "Language",
+        //   key: "language",
+        //   type: "navigation",
+        //   icon: "language-outline",
+        //   description: "English",
+        // },
       ],
     },
     {
@@ -297,7 +203,7 @@ export default function SettingsScreen({ navigation }) {
           type: "navigation",
           icon: "help-buoy-outline",
           description: "Get help and support",
-          onPress: () => navigation.navigate("Help"),
+          onPress: () => navigation.navigate("HelpSupport"),
         },
         {
           label: "Send Feedback",
@@ -305,7 +211,8 @@ export default function SettingsScreen({ navigation }) {
           type: "navigation",
           icon: "chatbubble-outline",
           description: "Share your thoughts",
-          onPress: () => setFeedbackModal(true),
+          onPress: () =>
+            navigation.navigate("HelpSupport", { initialTab: "query" }),
         },
         {
           label: "Contact Support",
@@ -313,15 +220,8 @@ export default function SettingsScreen({ navigation }) {
           type: "navigation",
           icon: "mail-outline",
           description: "Email or call us",
-          onPress: handleContactSupport,
-        },
-        {
-          label: "Rate App",
-          key: "rate",
-          type: "navigation",
-          icon: "star-outline",
-          description: "Rate us on app store",
-          onPress: () => Alert.alert("Rate App", "Thank you for your support!"),
+          onPress: () =>
+            navigation.navigate("HelpSupport", { initialTab: "contact" }),
         },
         {
           label: "About CSC",
@@ -329,11 +229,65 @@ export default function SettingsScreen({ navigation }) {
           type: "navigation",
           icon: "information-circle-outline",
           description: "Version 1.0.0",
-          onPress: () => setAboutModal(true),
+          onPress: () => navigation.navigate("About"),
         },
       ],
     },
   ];
+
+  const handleEmailNotificationToggle = async (value) => {
+    try {
+      // Update backend preference
+      await api.post("/user/notification-preference", {
+        email: value,
+      });
+
+      // Update UI
+      setSettings((prev) => ({
+        ...prev,
+        emailNotifications: value,
+      }));
+    } catch (error) {
+      Alert.alert("Error", "Failed to update email notification setting");
+    }
+  };
+
+  const handlePushNotificationToggle = async (value) => {
+    try {
+      // User wants to ENABLE notifications
+      if (value) {
+        const permission = await Notifications.getPermissionsAsync();
+
+        if (permission.status !== "granted") {
+          Alert.alert(
+            "Enable Notifications",
+            "Please enable notifications from device settings.",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Open Settings",
+                onPress: () => Linking.openSettings(),
+              },
+            ]
+          );
+          return;
+        }
+      }
+
+      // Update backend preference
+      await api.post("/user/notification-preference", {
+        push: value,
+      });
+
+      // Update local UI state
+      setSettings((prev) => ({
+        ...prev,
+        pushNotifications: value,
+      }));
+    } catch (error) {
+      Alert.alert("Error", "Failed to update notification setting");
+    }
+  };
 
   // Render setting item
   const renderSettingItem = (item) => {
@@ -357,7 +311,17 @@ export default function SettingsScreen({ navigation }) {
               </View>
               <Switch
                 value={settings[item.key]}
-                onValueChange={() => toggleSetting(item.key)}
+                onValueChange={(value) => {
+                  if (item.key === "pushNotifications") {
+                    handlePushNotificationToggle(value);
+                  } else if (item.key === "darkMode") {
+                    handleDarkModeToggle(value);
+                  } else if (item.key === "emailNotifications") {
+                    handleEmailNotificationToggle(value);
+                  } else {
+                    toggleSetting(item.key);
+                  }
+                }}
                 trackColor={{ false: "#D1D5DB", true: "#93C5FD" }}
                 thumbColor={settings[item.key] ? "#3B82F6" : "#F3F4F6"}
               />
@@ -537,90 +501,6 @@ export default function SettingsScreen({ navigation }) {
         <View className="h-6" />
       </ScrollView>
 
-      {/* Feedback Modal */}
-      <Modal
-        visible={feedbackModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setFeedbackModal(false)}
-      >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white dark:bg-gray-800 rounded-t-3xl p-6">
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-xl font-bold text-gray-800 dark:text-white">
-                Send Feedback
-              </Text>
-              <TouchableOpacity onPress={() => setFeedbackModal(false)}>
-                <Ionicons name="close" size={24} color="#9CA3AF" />
-              </TouchableOpacity>
-            </View>
-
-            <Text className="text-gray-600 dark:text-gray-400 mb-4">
-              We'd love to hear your thoughts on how we can improve!
-            </Text>
-
-            <TextInput
-              value={feedbackText}
-              onChangeText={setFeedbackText}
-              placeholder="Enter your feedback here..."
-              placeholderTextColor="#9CA3AF"
-              multiline
-              numberOfLines={6}
-              className="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 text-gray-800 dark:text-white mb-4"
-              style={{ textAlignVertical: "top" }}
-            />
-
-            <TouchableOpacity
-              onPress={handleSubmitFeedback}
-              className="bg-blue-500 rounded-xl py-4 items-center"
-            >
-              <Text className="text-white font-bold text-lg">Submit Feedback</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* About Modal */}
-      <Modal
-        visible={aboutModal}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setAboutModal(false)}
-      >
-        <View className="flex-1 justify-center items-center bg-black/50 px-6">
-          <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
-            <View className="items-center mb-6">
-              <View className="bg-blue-500 w-20 h-20 rounded-full items-center justify-center mb-4">
-                <Ionicons name="school" size={40} color="white" />
-              </View>
-              <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-                CSC Portal
-              </Text>
-              <Text className="text-gray-600 dark:text-gray-400">Version 1.0.0</Text>
-            </View>
-
-            <View className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-4">
-              <Text className="text-gray-700 dark:text-gray-300 text-center leading-6">
-                Your comprehensive platform for managing notices, jobs, forms, and
-                staying connected with your organization.
-              </Text>
-            </View>
-
-            <View className="mb-4">
-              <Text className="text-gray-600 dark:text-gray-400 text-sm text-center">
-                © 2026 CSC. All rights reserved.
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => setAboutModal(false)}
-              className="bg-blue-500 rounded-xl py-3 items-center"
-            >
-              <Text className="text-white font-semibold">Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

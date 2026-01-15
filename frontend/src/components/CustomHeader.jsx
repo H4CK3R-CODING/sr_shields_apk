@@ -8,7 +8,7 @@ import ThemeToggle from "./ThemeToggle";
 export default function CustomHeader({ 
   title, 
   showBack = false, 
-  showMenu = false,
+  showMenu = true,
   rightButton = <ThemeToggle />,
   // navigation,
 }) {

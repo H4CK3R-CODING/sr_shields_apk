@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
-  ActivityIndicator,
+  Animated,
   RefreshControl,
   Switch,
 } from "react-native";
@@ -121,15 +121,16 @@ export default function ManageUsersScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-gray-50 dark:bg-gray-900">
-        <CustomHeader title="Manage Users" showBack showMenu />
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text className="text-gray-500 dark:text-gray-400 mt-4">
-            Loading users...
-          </Text>
-        </View>
-      </View>
+      <ManageUsersSkeleton />
+      // <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+      //   <CustomHeader title="Manage Users" showBack showMenu />
+      //   <View className="flex-1 justify-center items-center">
+      //     <ActivityIndicator size="large" color="#3B82F6" />
+      //     <Text className="text-gray-500 dark:text-gray-400 mt-4">
+      //       Loading users...
+      //     </Text>
+      //   </View>
+      // </View>
     );
   }
 
@@ -494,3 +495,136 @@ const DetailRow = ({ icon, label, value }) => (
     </View>
   </View>
 );
+
+
+// Professional Skeleton Loading Component for Manage Users
+const ManageUsersSkeleton = () => {
+  const animatedValue = new Animated.Value(0);
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  const SkeletonBox = ({ width, height, style }) => (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: "#E5E7EB",
+          borderRadius: 8,
+          opacity,
+        },
+        style,
+      ]}
+      className="dark:bg-gray-700"
+    />
+  );
+
+  return (
+    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+      <CustomHeader title="Manage Users" showBack showMenu />
+
+      {/* Stats Cards Skeleton */}
+      <View className="bg-white dark:bg-gray-800 px-4 py-4">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="flex-row"
+        >
+          {[1, 2, 3, 4].map((item) => (
+            <View key={item} className="mr-3 min-w-[140px]">
+              <SkeletonBox width={140} height={80} style={{ borderRadius: 12 }} />
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Search and Filters Skeleton */}
+      <View className="bg-white dark:bg-gray-800 px-4 py-3">
+        {/* Search Bar */}
+        <SkeletonBox width="100%" height={44} style={{ marginBottom: 12, borderRadius: 8 }} />
+
+        {/* Filters */}
+        <View className="flex-row space-x-2">
+          <SkeletonBox width={110} height={40} style={{ marginRight: 8, borderRadius: 8 }} />
+          <SkeletonBox width={90} height={40} style={{ marginRight: 8, borderRadius: 8 }} />
+          <SkeletonBox width={100} height={40} style={{ borderRadius: 8 }} />
+        </View>
+      </View>
+
+      {/* Users List Skeleton */}
+      <ScrollView className="flex-1 px-4 py-4">
+        {[1, 2, 3, 4, 5, 6].map((item) => (
+          <View
+            key={item}
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                {/* User Info */}
+                <View className="flex-row items-center mb-2">
+                  {/* Avatar */}
+                  <SkeletonBox
+                    width={48}
+                    height={48}
+                    style={{ marginRight: 12, borderRadius: 24 }}
+                  />
+
+                  {/* Name and Email */}
+                  <View className="flex-1">
+                    <View className="flex-row items-center mb-2">
+                      <SkeletonBox width={140} height={18} style={{ borderRadius: 6 }} />
+                      <SkeletonBox
+                        width={50}
+                        height={20}
+                        style={{ marginLeft: 8, borderRadius: 4 }}
+                      />
+                    </View>
+                    <SkeletonBox
+                      width="90%"
+                      height={14}
+                      style={{ marginBottom: 6, borderRadius: 4 }}
+                    />
+                    <SkeletonBox width="70%" height={14} style={{ borderRadius: 4 }} />
+                  </View>
+                </View>
+
+                {/* Status Badge and Date */}
+                <View className="flex-row items-center">
+                  <SkeletonBox width={70} height={26} style={{ borderRadius: 13 }} />
+                  <SkeletonBox
+                    width={100}
+                    height={12}
+                    style={{ marginLeft: 8, borderRadius: 4 }}
+                  />
+                </View>
+              </View>
+
+              {/* Toggle Switch */}
+              <SkeletonBox width={48} height={24} style={{ borderRadius: 12 }} />
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};

@@ -8,6 +8,18 @@ import ThemeProvider from "./src/theme/ThemeProvider";
 import * as SplashScreen from 'expo-splash-screen';
 import useAuthStore from "./src/state/authStore";
 import Toast from "react-native-toast-message";
+import * as Notifications from "expo-notifications";
+
+Notifications.addNotificationResponseReceivedListener(
+  (response) => {
+    const screen =
+      response.notification.request.content.data.screen;
+
+    if (screen === "Notifications") {
+      navigation.navigate("Notifications");
+    }
+  }
+);
 
 // Keep splash screen visible while we check authentication
 SplashScreen.preventAutoHideAsync();

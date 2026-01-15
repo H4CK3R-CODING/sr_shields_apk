@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Modal,
   Platform,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,6 +18,177 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import useAuthStore from "../../state/authStore";
 import { api } from "../../services/api";
 import CustomHeader from "../../components/CustomHeader";
+
+// Skeleton Loading Component
+const SkeletonLoader = () => {
+  const animatedValue = new Animated.Value(0);
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  const SkeletonBox = ({ width, height, style }) => (
+    <Animated.View
+      style={[
+        {
+          width,
+          height,
+          backgroundColor: "#E5E7EB",
+          borderRadius: 8,
+          opacity,
+        },
+        style,
+      ]}
+      className="dark:bg-gray-700"
+    />
+  );
+
+  return (
+    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+      <CustomHeader title="My Profile" showBack />
+
+      <ScrollView className="flex-1">
+        {/* Header Skeleton */}
+        <View className="bg-blue-500 px-6 pt-8 pb-12 rounded-b-3xl">
+          <View className="items-center">
+            <SkeletonBox
+              width={96}
+              height={96}
+              style={{ borderRadius: 48, marginBottom: 16 }}
+            />
+            <SkeletonBox
+              width={180}
+              height={24}
+              style={{ marginBottom: 8, borderRadius: 12 }}
+            />
+            <SkeletonBox
+              width={220}
+              height={16}
+              style={{ marginBottom: 12, borderRadius: 8 }}
+            />
+            <SkeletonBox width={140} height={32} style={{ borderRadius: 16 }} />
+          </View>
+        </View>
+
+        {/* Content Skeleton */}
+        <View className="px-6 -mt-6">
+          {/* Card 1 */}
+          <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-4">
+            <View className="flex-row items-center mb-4">
+              <SkeletonBox
+                width={40}
+                height={40}
+                style={{ borderRadius: 12, marginRight: 12 }}
+              />
+              <SkeletonBox
+                width={160}
+                height={20}
+                style={{ borderRadius: 10 }}
+              />
+            </View>
+
+            {/* Form Fields */}
+            {[1, 2, 3, 4].map((item) => (
+              <View key={item} className="mb-4">
+                <SkeletonBox
+                  width={100}
+                  height={14}
+                  style={{ marginBottom: 8, borderRadius: 7 }}
+                />
+                <SkeletonBox
+                  width="100%"
+                  height={48}
+                  style={{ borderRadius: 12 }}
+                />
+              </View>
+            ))}
+          </View>
+
+          {/* Card 2 */}
+          <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-4">
+            <View className="flex-row items-center mb-4">
+              <SkeletonBox
+                width={40}
+                height={40}
+                style={{ borderRadius: 12, marginRight: 12 }}
+              />
+              <SkeletonBox
+                width={120}
+                height={20}
+                style={{ borderRadius: 10 }}
+              />
+            </View>
+            <SkeletonBox
+              width="100%"
+              height={56}
+              style={{ borderRadius: 12 }}
+            />
+          </View>
+
+          {/* Card 3 */}
+          <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-4">
+            <View className="flex-row items-center mb-4">
+              <SkeletonBox
+                width={40}
+                height={40}
+                style={{ borderRadius: 12, marginRight: 12 }}
+              />
+              <SkeletonBox
+                width={180}
+                height={20}
+                style={{ borderRadius: 10 }}
+              />
+            </View>
+            {[1, 2, 3].map((item) => (
+              <View
+                key={item}
+                className="flex-row justify-between py-3 border-b border-gray-100 dark:border-gray-700"
+              >
+                <SkeletonBox
+                  width={100}
+                  height={16}
+                  style={{ borderRadius: 8 }}
+                />
+                <SkeletonBox
+                  width={120}
+                  height={16}
+                  style={{ borderRadius: 8 }}
+                />
+              </View>
+            ))}
+          </View>
+
+          {/* Logout Button Skeleton */}
+          <SkeletonBox
+            width="100%"
+            height={56}
+            style={{ borderRadius: 16, marginBottom: 24 }}
+          />
+        </View>
+
+        <View className="h-6" />
+      </ScrollView>
+    </View>
+  );
+};
 
 export default function ProfileScreen({ navigation }) {
   const { user, setUser, logout } = useAuthStore();
@@ -57,26 +229,36 @@ export default function ProfileScreen({ navigation }) {
     try {
       setLoading(true);
 
+      setProfileData({
+        fullName: user.fullName || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth) : new Date(),
+        gender: user.gender || "male",
+        department: user.department || "",
+        role: user.role || "user",
+      });
       // Determine endpoint based on user role
-      const endpoint =
-        user?.role === "admin" ? "/user/profile" : "/user/profile";
+      // const endpoint =
+      //   user?.role === "admin" ? "/user/profile" : "/user/profile";
 
-      const { data } = await api.get(endpoint);
+      // const { data } = await api.get(endpoint);
 
-      if (data.success) {
-        setProfileData({
-          fullName: data.user.fullName || "",
-          email: data.user.email || "",
-          phone: data.user.phone || "",
-          address: data.user.address || "",
-          dateOfBirth: data.user.dateOfBirth
-            ? new Date(data.user.dateOfBirth)
-            : new Date(),
-          gender: data.user.gender || "male",
-          department: data.user.department || "",
-          role: data.user.role || "user",
-        });
-      }
+      // if (data.success) {
+      //   setProfileData({
+      //     fullName: data.user.fullName || "",
+      //     email: data.user.email || "",
+      //     phone: data.user.phone || "",
+      //     address: data.user.address || "",
+      //     dateOfBirth: data.user.dateOfBirth
+      //       ? new Date(data.user.dateOfBirth)
+      //       : new Date(),
+      //     gender: data.user.gender || "male",
+      //     department: data.user.department || "",
+      //     role: data.user.role || "user",
+      //   });
+      // }
     } catch (error) {
       console.error("Error fetching profile:", error);
       Alert.alert("Error", "Failed to load profile data");
@@ -146,6 +328,7 @@ export default function ProfileScreen({ navigation }) {
 
       if (data.success) {
         // Update local user state
+        console.log(data);
         setUser(data.user);
         setIsEditing(false);
         Alert.alert("Success", "Profile updated successfully");
@@ -216,12 +399,26 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const confirmLogout = async () => {
-    setShowLogoutModal(false);
-    await logout();
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Login" }], // Change "Login" to your actual route name
-    });
+    try {
+      setShowLogoutModal(false);
+      await logout();
+      // navigation.reset({
+      //   index: 0,
+      //   routes: [{ name: "Login" }],
+      // });
+      navigation.navigate("Login");
+
+      // Small delay to ensure state is cleared
+      // setTimeout(() => {
+      //   navigation.replace("Login");
+      // }, 100);
+    } catch (error) {
+      console.error("Logout error:", error);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    }
   };
 
   const formatDate = (date) => {
@@ -240,17 +437,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   if (loading) {
-    return (
-      <View className="flex-1 bg-gray-50 dark:bg-gray-900">
-        <CustomHeader title="My Profile" showBack />
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text className="text-gray-500 dark:text-gray-400 mt-4 text-base">
-            Loading profile...
-          </Text>
-        </View>
-      </View>
-    );
+    return <SkeletonLoader />;
   }
 
   return (
@@ -522,7 +709,7 @@ export default function ProfileScreen({ navigation }) {
               <TouchableOpacity
                 onPress={() => {
                   setIsEditing(false);
-                  fetchProfile(); // Reset to original data
+                  fetchProfile();
                 }}
                 disabled={saving}
                 className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-xl py-4 mr-2"

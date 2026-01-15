@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   Dimensions,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,34 +17,62 @@ import NavLayout from "@/src/components/Navbar/NavLayout";
 
 const { width } = Dimensions.get("window");
 
-// Enhanced Stat Card Component
-const StatCard = ({ label, value, icon, colors, onPress }) => (
-  <TouchableOpacity
-    onPress={onPress}
-    activeOpacity={0.8}
-    className="w-[48%] mb-4 rounded-2xl overflow-hidden shadow-lg"
-  >
-    <LinearGradient
-      colors={colors}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      className="p-5"
-    >
-      {/* Icon Badge */}
-      <View className="bg-white/20 w-14 h-14 rounded-2xl items-center justify-center mb-3">
-        <Ionicons name={icon} size={28} color="white" />
-      </View>
-
-      {/* Value */}
-      <Text className="text-white font-bold text-3xl mb-1">
-        {value?.toLocaleString() || 0}
-      </Text>
-
-      {/* Label */}
-      <Text className="text-white/90 text-sm font-semibold mb-2">{label}</Text>
-    </LinearGradient>
-  </TouchableOpacity>
+// Skeleton Components
+const SkeletonBox = ({ width, height, className = "" }) => (
+  <View
+    style={{ width, height }}
+    className={`bg-gray-200 dark:bg-gray-700 rounded-lg ${className}`}
+  />
 );
+
+const StatCardSkeleton = () => (
+  <View className="w-[48%] mb-4 rounded-2xl overflow-hidden shadow-lg bg-gray-300 dark:bg-gray-700 p-5">
+    <SkeletonBox width={56} height={56} className="rounded-2xl mb-3" />
+    <SkeletonBox width="60%" height={36} className="mb-1" />
+    <SkeletonBox width="80%" height={20} className="mb-2" />
+  </View>
+);
+
+const ContentCardSkeleton = () => (
+  <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-3 shadow-sm">
+    <View className="flex-row items-start">
+      <SkeletonBox width={48} height={48} className="rounded-xl mr-3" />
+      <View className="flex-1">
+        <SkeletonBox width="70%" height={18} className="mb-2" />
+        <SkeletonBox width="100%" height={14} className="mb-2" />
+        <SkeletonBox width="40%" height={12} />
+      </View>
+    </View>
+  </View>
+);
+
+// Enhanced Stat Card Component
+const StatCard = ({ label, value, icon, colors, onPress, isLoading }) => {
+  if (isLoading) return <StatCardSkeleton />;
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      className="w-[48%] mb-4 rounded-2xl overflow-hidden shadow-lg"
+    >
+      <LinearGradient
+        colors={colors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        className="p-5"
+      >
+        <View className="bg-white/20 w-14 h-14 rounded-2xl items-center justify-center mb-3">
+          <Ionicons name={icon} size={28} color="white" />
+        </View>
+        <Text className="text-white font-bold text-3xl mb-1">
+          {value?.toLocaleString() || 0}
+        </Text>
+        <Text className="text-white/90 text-sm font-semibold mb-2">{label}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+};
 
 // Quick Action Card
 const QuickActionCard = ({ title, description, icon, colors, onPress }) => (
@@ -158,11 +185,7 @@ export default function UserDashboardScreen({ navigation }) {
   });
 
   useEffect(() => {
-    const initDashboard = async () => {
-      await fetchDashboardData();
-      setLoading(false);
-    };
-    initDashboard();
+    fetchDashboardData();
 
     // Update time every minute
     const timer = setInterval(() => {
@@ -174,9 +197,10 @@ export default function UserDashboardScreen({ navigation }) {
 
   const fetchDashboardData = async () => {
     try {
-      setRefreshing(true);
+      if (!refreshing) {
+        setLoading(true);
+      }
 
-      // Fetch dashboard stats from admin route (works for all users)
       const { data } = await api.get("/admin/dashboard/stats");
 
       if (data.success) {
@@ -197,6 +221,7 @@ export default function UserDashboardScreen({ navigation }) {
   };
 
   const onRefresh = () => {
+    setRefreshing(true);
     fetchDashboardData();
   };
 
@@ -316,19 +341,6 @@ export default function UserDashboardScreen({ navigation }) {
   const readNotifications = 0;
   const urgentNotifications = 0;
 
-  if (loading) {
-    return (
-      <NavLayout title="Dashboard" showAIChat={false}>
-        <View className="flex-1 justify-center items-center bg-gray-50 dark:bg-gray-900">
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text className="text-gray-500 dark:text-gray-400 mt-4 text-base">
-            Loading dashboard...
-          </Text>
-        </View>
-      </NavLayout>
-    );
-  }
-
   return (
     <NavLayout title="CSC Portal" showAIChat={false}>
       <ScrollView
@@ -369,7 +381,7 @@ export default function UserDashboardScreen({ navigation }) {
         </LinearGradient>
 
         {/* Urgent Alert Banner */}
-        {urgentNotifications > 0 && (
+        {!loading && urgentNotifications > 0 && (
           <TouchableOpacity
             onPress={() => navigation.navigate("Notifications")}
             className="mx-4 -mt-4 mb-4"
@@ -402,9 +414,11 @@ export default function UserDashboardScreen({ navigation }) {
         {/* Stats Grid */}
         <View className="px-4 -mt-6">
           <View className="flex-row flex-wrap justify-between">
-            {dashboardStats.map((stat, index) => (
-              <StatCard key={index} {...stat} />
-            ))}
+            {loading
+              ? [1, 2, 3, 4].map((i) => <StatCardSkeleton key={i} />)
+              : dashboardStats.map((stat, index) => (
+                  <StatCard key={index} {...stat} isLoading={false} />
+                ))}
           </View>
         </View>
 
@@ -423,7 +437,7 @@ export default function UserDashboardScreen({ navigation }) {
         </View>
 
         {/* Latest Unread Notifications */}
-        {latestNotifications.length > 0 && (
+        {!loading && latestNotifications.length > 0 && (
           <View className="px-4 mt-6">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-gray-900 dark:text-white font-bold text-xl">
@@ -447,8 +461,21 @@ export default function UserDashboardScreen({ navigation }) {
           </View>
         )}
 
+        {/* Skeleton for Notifications while loading */}
+        {loading && (
+          <View className="px-4 mt-6">
+            <View className="flex-row justify-between items-center mb-4">
+              <SkeletonBox width={180} height={24} />
+              <SkeletonBox width={60} height={20} />
+            </View>
+            {[1, 2, 3].map((i) => (
+              <ContentCardSkeleton key={i} />
+            ))}
+          </View>
+        )}
+
         {/* Featured Jobs Section */}
-        {featuredJobs.length > 0 && (
+        {!loading && featuredJobs.length > 0 && (
           <View className="px-4 mt-6">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-gray-900 dark:text-white font-bold text-xl">
@@ -471,7 +498,6 @@ export default function UserDashboardScreen({ navigation }) {
         )}
 
         {/* Activity Status Card */}
-
         <View className="px-4 mt-6 mb-6">
           <LinearGradient
             colors={["#10B981", "#059669"]}
@@ -480,7 +506,7 @@ export default function UserDashboardScreen({ navigation }) {
             style={{
               borderRadius: 16,
               padding: 24,
-              elevation: 5, // Android shadow
+              elevation: 5,
             }}
             className="rounded-2xl p-6 shadow-lg"
           >
@@ -510,7 +536,7 @@ export default function UserDashboardScreen({ navigation }) {
                 </View>
                 <Text className="text-white text-xs">Total</Text>
                 <Text className="text-white font-bold">
-                  {dashboardData.stats.totalNotifications}
+                  {loading ? "..." : dashboardData.stats.totalNotifications}
                 </Text>
               </View>
 
@@ -520,7 +546,7 @@ export default function UserDashboardScreen({ navigation }) {
                 </View>
                 <Text className="text-white text-xs">Jobs</Text>
                 <Text className="text-white font-bold">
-                  {dashboardData.stats.totalJobs}
+                  {loading ? "..." : dashboardData.stats.totalJobs}
                 </Text>
               </View>
 
@@ -530,7 +556,7 @@ export default function UserDashboardScreen({ navigation }) {
                 </View>
                 <Text className="text-white text-xs">Forms</Text>
                 <Text className="text-white font-bold">
-                  {dashboardData.stats.totalForms}
+                  {loading ? "..." : dashboardData.stats.totalForms}
                 </Text>
               </View>
             </View>
@@ -538,7 +564,8 @@ export default function UserDashboardScreen({ navigation }) {
         </View>
 
         {/* Empty State */}
-        {dashboardData.stats.totalNotifications === 0 &&
+        {!loading &&
+          dashboardData.stats.totalNotifications === 0 &&
           dashboardData.stats.totalJobs === 0 &&
           dashboardData.stats.totalForms === 0 && (
             <View className="px-4 mb-8">
