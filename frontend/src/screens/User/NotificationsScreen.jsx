@@ -482,8 +482,9 @@ export default function NotificationsScreen({ navigation }) {
               </View>
 
               {/* Modal Header with Gradient */}
+              {/* {console.log("Selected Notification:", selectedNotification)} */}
               <View
-                className={`${getPriorityColor(selectedNotification.priority).bg} p-6 pb-8 relative`}
+                className={`${getPriorityColor(selectedNotification.notification.priority).bg} p-6 pb-8 relative`}
               >
                 {/* Decorative circles */}
                 <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
@@ -492,7 +493,7 @@ export default function NotificationsScreen({ navigation }) {
                 <View className="flex-row justify-between items-start mb-4 relative z-10">
                   <View className="bg-white/30 backdrop-blur-sm w-16 h-16 rounded-2xl items-center justify-center shadow-lg">
                     <Ionicons
-                      name={getPriorityIcon(selectedNotification.priority)}
+                      name={getPriorityIcon(selectedNotification.notification.priority)}
                       size={32}
                       color="white"
                     />
@@ -509,12 +510,12 @@ export default function NotificationsScreen({ navigation }) {
                 <View className="flex-row items-center space-x-2 relative z-10">
                   <View className="bg-white/30 backdrop-blur-sm px-4 py-1.5 rounded-full">
                     <Text className="text-white text-xs font-bold uppercase tracking-wide">
-                      {selectedNotification.priority}
+                      {selectedNotification.notification.priority}
                     </Text>
                   </View>
                   <View className="bg-white/30 backdrop-blur-sm px-4 py-1.5 rounded-full">
                     <Text className="text-white text-xs font-semibold">
-                      {getRelativeTime(selectedNotification.createdAt)}
+                      {getRelativeTime(selectedNotification.notification.createdAt)}
                     </Text>
                   </View>
                 </View>
@@ -524,12 +525,12 @@ export default function NotificationsScreen({ navigation }) {
               <ScrollView className="max-h-96 px-6 pt-6 pb-4 bg-white dark:bg-gray-800">
                 {/* Title */}
                 <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
-                  {selectedNotification.title}
+                  {selectedNotification.notification.title}
                 </Text>
 
                 {/* Message */}
                 <Text className="text-gray-700 dark:text-gray-300 text-base leading-7 mb-6">
-                  {selectedNotification.message}
+                  {selectedNotification.notification.message}
                 </Text>
 
                 {/* Metadata Cards */}
@@ -545,7 +546,7 @@ export default function NotificationsScreen({ navigation }) {
                     </View>
                     <Text className="text-gray-800 dark:text-gray-200 text-sm font-bold">
                       {new Date(
-                        selectedNotification.createdAt
+                        selectedNotification.notification.createdAt
                       ).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -553,7 +554,7 @@ export default function NotificationsScreen({ navigation }) {
                     </Text>
                     <Text className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">
                       {new Date(
-                        selectedNotification.createdAt
+                        selectedNotification.notification.createdAt
                       ).toLocaleDateString("en-US", {
                         year: "numeric",
                       })}
@@ -571,7 +572,7 @@ export default function NotificationsScreen({ navigation }) {
                     </View>
                     <Text className="text-gray-800 dark:text-gray-200 text-sm font-bold">
                       {new Date(
-                        selectedNotification.createdAt
+                        selectedNotification.notification.createdAt
                       ).toLocaleTimeString("en-US", {
                         hour: "numeric",
                         minute: "2-digit",
@@ -579,7 +580,7 @@ export default function NotificationsScreen({ navigation }) {
                     </Text>
                     <Text className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">
                       {new Date(
-                        selectedNotification.createdAt
+                        selectedNotification.notification.createdAt
                       ).toLocaleDateString("en-US", {
                         weekday: "short",
                       })}
@@ -613,7 +614,7 @@ export default function NotificationsScreen({ navigation }) {
               <View className="p-6 pt-4 bg-gray-50 dark:bg-gray-900/50">
                 <TouchableOpacity
                   onPress={closeModal}
-                  className={`${getPriorityColor(selectedNotification.priority).bg} rounded-2xl py-4 px-6 items-center shadow-lg`}
+                  className={`${getPriorityColor(selectedNotification.notification.priority).bg} rounded-2xl py-4 px-6 items-center shadow-lg`}
                   activeOpacity={0.8}
                 >
                   <View className="flex-row items-center">

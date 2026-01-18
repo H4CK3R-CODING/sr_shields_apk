@@ -4,6 +4,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { registerPushToken } from "../utils/registerPushToken";
 // api/axios.js
 import axios from "axios";
+import Toast from "react-native-toast-message";
+import { useNavigation } from "@react-navigation/native";
 
 export const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
@@ -59,7 +61,7 @@ const useAuthStore = create((set, get) => ({
         const authData = JSON.parse(storedAuth);
 
         // Check if token is expired (optional)
-        const isTokenValid = get().checkTokenExpiry(authData.accessToken);
+        const isTokenValid = get().checkTokenExpiry(authData.token);
 
         if (isTokenValid) {
           // Auto-login with stored data
@@ -125,19 +127,32 @@ const useAuthStore = create((set, get) => ({
 
       await registerPushToken();
 
+      Toast.show({
+        type: "success",
+        text1: "Login Successful",
+        text2: "Welcome back! 👋",
+        position: "top",
+        visibilityTime: 3000,
+      });
+
       console.log("✅ Login successful:", user?.email);
 
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
-      console.error("❌ Login error:", error);
+      console.error("Login error:", error);
+
+      Toast.show({
+        type: "error",
+        text1: "Login Failed",
+      });
 
       // Handle different error responses
       const errorMessage =
         error.response?.data?.message || error.message || "Login failed";
 
       return { success: false, error: errorMessage };
-    }
+    } 
   },
 
   // Register
@@ -151,12 +166,27 @@ const useAuthStore = create((set, get) => ({
       });
 
       set({ isLoading: false });
+
+      Toast.show({
+        type: "success",
+        text1: "Register Successful",
+        text2: "Login to continue! 🎉",
+        position: "top",
+        visibilityTime: 3000,
+      });
       console.log("Registration successful:", data);
 
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
       console.error("Registration error:", error);
+      Toast.show({
+        type: "errror",
+        text1: "Registration Failed",
+        text2: "Please try again.",
+        position: "top",
+        visibilityTime: 3000,
+      });
 
       return { success: false, error: error.message };
     }
@@ -165,10 +195,8 @@ const useAuthStore = create((set, get) => ({
   // Logout
   logout: async () => {
     try {
-
       const authData = await AsyncStorage.getItem("authData");
       const token = authData ? JSON.parse(authData).token : null;
-
 
       // Clear AsyncStorage
       await AsyncStorage.removeItem("authData");
@@ -181,7 +209,6 @@ const useAuthStore = create((set, get) => ({
         token: null,
       });
 
-      
       if (token) {
         const { data } = await api.get("/user/clear-push-token", {
           headers: {
@@ -189,10 +216,25 @@ const useAuthStore = create((set, get) => ({
           },
         });
 
+        Toast.show({
+          type: "success",
+          text1: "Logout Successful",
+          text2: "See you again! 👋",
+          position: "top",
+          visibilityTime: 3000,
+        });
+
         console.log("✅ Logout successful", data);
       }
     } catch (error) {
       console.error("❌ Logout error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Logout Failed",
+        text2: "Please try again.",
+        position: "top",
+        visibilityTime: 3000,
+      });
     }
   },
 
@@ -221,9 +263,22 @@ const useAuthStore = create((set, get) => ({
       set({ user: updatedUser });
 
       console.log("✅ Profile updated successfully");
+      Toast.show({
+        type: "success",
+        text1: "Profile Updated",
+        position: "top",
+        visibilityTime: 3000,
+      });
       return { success: true };
     } catch (error) {
       console.error("❌ Update profile error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Update Failed",
+        text2: "Please try again.",
+        position: "top",
+        visibilityTime: 3000,
+      });
       return { success: false, error: error.message };
     }
   },

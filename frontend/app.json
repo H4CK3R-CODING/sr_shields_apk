@@ -8,6 +8,7 @@
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "jsEngine": "hermes",
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/images/icon.png",
@@ -28,6 +29,9 @@
         "backgroundColor": "#E6F4FE"
       },
       "icon": "./assets/images/icon.png",
+      "enableProguardInReleaseBuilds": true,
+      "enableShrinkResources": true,
+
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/icon.png"
@@ -37,9 +41,7 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.aetherionx.frontend",
       "runtimeVersion": "1.0.0",
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "output": "single",

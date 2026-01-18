@@ -85,6 +85,11 @@ const CustomDrawerContent = ({ navigation, role }) => {
         section: "SUPPORT",
         items: [
           {
+            iconName: "hardware-chip",
+            label: "Developer",
+            screen: "Developer",
+          },
+          {
             iconName: "help-circle-outline",
             label: "Help & Support",
             screen: "HelpSupport",
@@ -142,6 +147,11 @@ const CustomDrawerContent = ({ navigation, role }) => {
         section: "SUPPORT",
         items: [
           {
+            iconName: "hardware-chip",
+            label: "Developer",
+            screen: "Developer",
+          },
+          {
             iconName: "settings-outline",
             label: "Settings",
             screen: "Settings",
@@ -165,8 +175,9 @@ const CustomDrawerContent = ({ navigation, role }) => {
   const publicDrawerItems = [
     { iconName: "home-outline", label: "Home", screen: "Welcome" },
     { iconName: "information-circle-outline", label: "About", screen: "About" },
-    { iconName: "cog", label: "Setting", screen: "Setting" },
-    { iconName: "headset", label: "Help", screen: "HelpSupport" },
+    { iconName: "hardware-chip", label: "Developer", screen: "Developer" },
+    // { iconName: "cog", label: "Setting", screen: "Setting" },
+    { iconName: "headset", label: "Help & Support", screen: "HelpSupport" },
     { iconName: "log-in-outline", label: "Login", screen: "Login" },
     { iconName: "person-add-outline", label: "Register", screen: "Register" },
   ];

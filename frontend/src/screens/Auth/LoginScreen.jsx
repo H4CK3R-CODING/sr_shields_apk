@@ -21,6 +21,7 @@ import AppHeader from "@/src/components/Auth/AppHeader";
 import LoginForm from "./LoginForm";
 import Loading from "@/src/components/Loading";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { registerPushToken } from "@/src/utils/registerPushToken";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -191,25 +192,6 @@ export default function LoginScreen() {
     // Attempt login
     const result = await login(email.toLowerCase().trim(), password);
 
-    if (result.success) {
-      // Login successful - RootNavigator will handle navigation automatically
-      // Clear form
-      // setEmail("");
-      // setPassword("");
-      Toast.show({
-        type: "success",
-        text1: "Login Successful",
-        text2: "Welcome back! 👋",
-        position: "top",
-        visibilityTime: 3000,
-      });
-    } else {
-      // Show error
-      Toast.show({
-        type: "error",
-        text1: "Login Failed",
-      });
-    }
   };
 
   // Quick login buttons (for demo/testing)

@@ -18,6 +18,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import useAuthStore from "../../state/authStore";
 import { api } from "../../services/api";
 import CustomHeader from "../../components/CustomHeader";
+import Toast from "react-native-toast-message";
 
 // Skeleton Loading Component
 const SkeletonLoader = () => {
@@ -331,14 +332,23 @@ export default function ProfileScreen({ navigation }) {
         console.log(data);
         setUser(data.user);
         setIsEditing(false);
-        Alert.alert("Success", "Profile updated successfully");
+        Toast.show({
+          type: "success",
+          text1: "Profile Updated",
+          text2: "Your profile has been updated successfully!",
+          position: "top",
+          visibilityTime: 3000,
+        });
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      Alert.alert(
-        "Error",
-        error.response?.data?.message || "Failed to update profile"
-      );
+      Toast.show({
+        type: "error",
+        text1: "Update Failed",
+        text2: "Please try again.",
+        position: "top",
+        visibilityTime: 3000,
+      });
     } finally {
       setSaving(false);
     }
@@ -381,14 +391,23 @@ export default function ProfileScreen({ navigation }) {
           newPassword: "",
           confirmPassword: "",
         });
-        Alert.alert("Success", "Password changed successfully");
+        Toast.show({
+          type: "success",
+          text1: "Password Changed",
+          text2: " Your password has been changed successfully!",
+          position: "top",
+          visibilityTime: 3000,
+        });
       }
     } catch (error) {
       console.error("Error changing password:", error);
-      Alert.alert(
-        "Error",
-        error.response?.data?.message || "Failed to change password"
-      );
+      Toast.show({
+        type: "error",
+        text1: "Password Change Failed",
+        text2: "Please try again.",
+        position: "top",
+        visibilityTime: 3000,
+      });
     } finally {
       setSaving(false);
     }
@@ -401,12 +420,12 @@ export default function ProfileScreen({ navigation }) {
   const confirmLogout = async () => {
     try {
       setShowLogoutModal(false);
+      navigation.navigate("Welcome");
       await logout();
       // navigation.reset({
       //   index: 0,
       //   routes: [{ name: "Login" }],
       // });
-      navigation.navigate("Login");
 
       // Small delay to ensure state is cleared
       // setTimeout(() => {

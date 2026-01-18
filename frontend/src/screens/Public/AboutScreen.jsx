@@ -42,20 +42,20 @@ export default function AboutScreen({ navigation }) {
   ];
 
   const achievements = [
+    // {
+    //   number: "4 Lakh+",
+    //   label: "Active Centers",
+    //   icon: "business",
+    //   color: "#0EA5E9",
+    // },
     {
-      number: "4 Lakh+",
-      label: "Active Centers",
-      icon: "business",
-      color: "#0EA5E9",
-    },
-    {
-      number: "5 Cr+",
+      number: "5K +",
       label: "Citizens Served",
       icon: "people",
       color: "#10B981",
     },
     {
-      number: "500+",
+      number: "100+",
       label: "Services Offered",
       icon: "apps",
       color: "#F59E0B",
@@ -80,17 +80,17 @@ export default function AboutScreen({ navigation }) {
         "Income & Caste Certificates",
       ],
     },
-    {
-      icon: "wallet-outline",
-      title: "Banking & Finance",
-      items: [
-        "Bank Account Opening",
-        "Money Transfer",
-        "Insurance Services",
-        "Loan Applications",
-        "Mutual Funds",
-      ],
-    },
+    // {
+    //   icon: "wallet-outline",
+    //   title: "Banking & Finance",
+    //   items: [
+    //     "Bank Account Opening",
+    //     "Money Transfer",
+    //     "Insurance Services",
+    //     "Loan Applications",
+    //     "Mutual Funds",
+    //   ],
+    // },
     {
       icon: "school-outline",
       title: "Education & Skills",
@@ -117,34 +117,28 @@ export default function AboutScreen({ navigation }) {
 
   const socialLinks = [
     {
-      icon: "logo-facebook",
-      label: "Facebook",
-      url: "https://facebook.com/csc",
-      color: "#1877F2",
+      icon: "logo-whatsapp",
+      label: "WhatsApp",
+      url: "https://wa.me/+918607550898",
+      color: "#008000",
     },
     {
-      icon: "logo-twitter",
-      label: "Twitter",
-      url: "https://twitter.com/csc",
-      color: "#1DA1F2",
+      icon: "mail-outline",
+      label: "Gmail",
+      url: "mailto:souravrathour02@gmail.com",
+      color: "#9AA0A6",
     },
     {
       icon: "logo-instagram",
       label: "Instagram",
-      url: "https://instagram.com/csc",
+      url: "https://instagram.com/iam_sr______/",
       color: "#E4405F",
     },
     {
       icon: "logo-youtube",
       label: "YouTube",
-      url: "https://youtube.com/csc",
+      url: "https://youtube.com/@mrsrshield",
       color: "#FF0000",
-    },
-    {
-      icon: "logo-linkedin",
-      label: "LinkedIn",
-      url: "https://linkedin.com/company/csc",
-      color: "#0A66C2",
     },
   ];
 
@@ -436,7 +430,7 @@ export default function AboutScreen({ navigation }) {
                 </Text>
               </View>
               <Text className="text-gray-600 dark:text-gray-300 mb-4">
-                Toll Free: 1800-XXX-XXXX
+                Mob No. : +918607550898
               </Text>
 
               <View className="flex-row items-center mb-4">
@@ -446,7 +440,7 @@ export default function AboutScreen({ navigation }) {
                 </Text>
               </View>
               <Text className="text-gray-600 dark:text-gray-300 mb-4">
-                info@csc.gov.in
+                souravrathour02@gmail.com
               </Text>
 
               <View className="flex-row items-center mb-4">
@@ -457,7 +451,7 @@ export default function AboutScreen({ navigation }) {
               </View>
               <TouchableOpacity onPress={() => openUrl("https://csc.gov.in")}>
                 <Text className="text-blue-600 dark:text-blue-400">
-                  www.csc.gov.in
+                  https://sr-shields.vercel.app/
                 </Text>
               </TouchableOpacity>
             </View>

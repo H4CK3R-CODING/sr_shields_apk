@@ -292,7 +292,7 @@ export default function CSCWelcomeScreen({ navigation }) {
               <View className="flex-row justify-around">
                 <View className="items-center">
                   <Text className="text-blue-600 dark:text-blue-400 text-2xl font-bold">
-                    5L+
+                    5K+
                   </Text>
                   <Text className="text-gray-600 dark:text-gray-300 text-xs">
                     Users
@@ -308,10 +308,10 @@ export default function CSCWelcomeScreen({ navigation }) {
                 </View>
                 <View className="items-center">
                   <Text className="text-purple-600 dark:text-purple-400 text-2xl font-bold">
-                    1000+
+                    All States
                   </Text>
                   <Text className="text-gray-600 dark:text-gray-300 text-xs">
-                    Centers
+                    Pan-India Presence
                   </Text>
                 </View>
               </View>
@@ -380,7 +380,7 @@ export default function CSCWelcomeScreen({ navigation }) {
           {/* Help & Support */}
           <TouchableOpacity
             className="mx-4 mt-6"
-            onPress={() => navigation.navigate("Support")}
+            onPress={() => navigation.navigate("HelpSupport")}
           >
             <LinearGradient
               colors={["#10B981", "#059669"]}

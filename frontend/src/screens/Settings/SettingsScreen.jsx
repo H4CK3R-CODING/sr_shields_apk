@@ -20,6 +20,7 @@ import * as Notifications from "expo-notifications";
 import { api } from "../../services/api";
 import { Platform } from "react-native";
 import { ThemeContext } from "@/src/theme/ThemeProvider";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function SettingsScreen({ navigation }) {
   const { user, role } = useAuthStore();
@@ -122,7 +123,8 @@ export default function SettingsScreen({ navigation }) {
 
       setSettings((prev) => ({
         ...prev,
-        pushNotifications: osEnabled && data.user.notificationPreferences.push.enabled,
+        pushNotifications:
+          osEnabled && data.user.notificationPreferences.push.enabled,
         emailNotifications: data.user.notificationPreferences.email.enabled,
       }));
     } catch (error) {
@@ -463,7 +465,13 @@ export default function SettingsScreen({ navigation }) {
 
       <ScrollView className="flex-1 px-4 py-4">
         {/* User Info Card */}
-        <View className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 mb-6 shadow-lg">
+        <LinearGradient
+          colors={["#3b82f6", "#2563eb"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ borderRadius: 16 }}
+          className="  p-6 mb-6 shadow-lg"
+        >
           <View className="flex-row items-center">
             <View className="bg-white w-16 h-16 rounded-full items-center justify-center">
               <Ionicons name="person" size={32} color="#3B82F6" />
@@ -480,7 +488,7 @@ export default function SettingsScreen({ navigation }) {
               <Ionicons name="create-outline" size={24} color="white" />
             </TouchableOpacity>
           </View>
-        </View>
+        </LinearGradient>
 
         {/* Settings Sections */}
         {settingsSections.map((section, sectionIndex) => (
@@ -500,7 +508,6 @@ export default function SettingsScreen({ navigation }) {
         {/* Bottom Padding */}
         <View className="h-6" />
       </ScrollView>
-
     </View>
   );
 }
