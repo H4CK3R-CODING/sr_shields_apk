@@ -34,6 +34,11 @@ app.use(
 
 
 // ✅ Routes
+app.use("/", (req, res, next) => {
+  console.log("Request received at:", new Date().toLocaleString());
+  next();
+}, express.static(path.join(__dirname, "public")));
+
 app.use("/api/v1", mainRouter);
 
 app.get("/", (req, res) => {

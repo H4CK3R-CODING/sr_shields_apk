@@ -163,7 +163,7 @@ export default function LoginScreen() {
   // Handle login
   const handleLogin = async (email, password) => {
     console.log(
-      `🔐 Login attempt for role: ${selectedRole}, email : ${email} and ${password}`
+      `🔐 Login attempt for role: ${selectedRole}, email : ${email} and ${password}`,
     );
     // Clear previous errors
     setErrors({});
@@ -191,6 +191,22 @@ export default function LoginScreen() {
 
     // Attempt login
     const result = await login(email.toLowerCase().trim(), password);
+    console.log("🔄 Login result:", result);
+    if (result.error) {
+      Toast.show({
+        type: "error",
+        text1: "Login Failed",
+        text2: result.error || "Please check your credentials.",
+      });
+      return;
+    }
+    Toast.show({
+      type: "success",
+      text1: "Login Successful",
+      text2: "Welcome back! 👋",
+      position: "top",
+      visibilityTime: 3000,
+    });
 
   };
 

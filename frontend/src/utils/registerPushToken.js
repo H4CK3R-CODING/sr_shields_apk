@@ -29,6 +29,6 @@ export async function registerPushToken() {
   
     console.log("Expo push token registered:", token);
   } catch (error) {
-    console.error("Error registering push token:", error);
+    console.log("Error registering push token:", error);
   }
 }

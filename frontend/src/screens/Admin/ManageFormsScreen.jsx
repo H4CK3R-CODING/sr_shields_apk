@@ -1,6 +1,14 @@
 // src/screens/Admin/ManageFormsScreen.jsx
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import useContentStore from "../../state/contentStore";
@@ -18,7 +26,13 @@ export default function ManageFormsScreen() {
     fileName: "",
   });
 
-  const categories = ["Application", "Registration", "Request", "Certificate", "Other"];
+  const categories = [
+    "Application",
+    "Registration",
+    "Request",
+    "Certificate",
+    "Other",
+  ];
 
   const handlePickDocument = async () => {
     try {
@@ -65,18 +79,14 @@ export default function ManageFormsScreen() {
   };
 
   const handleDelete = (id) => {
-    Alert.alert(
-      "Delete Form",
-      "Are you sure you want to delete this form?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
-          style: "destructive",
-          onPress: () => deleteForm(id)
-        }
-      ]
-    );
+    Alert.alert("Delete Form", "Are you sure you want to delete this form?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => deleteForm(id),
+      },
+    ]);
   };
 
   const getFileIcon = (fileType) => {
@@ -121,13 +131,17 @@ export default function ManageFormsScreen() {
               <Text className="text-2xl font-bold text-gray-800 dark:text-white">
                 {forms.length}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">Total Forms</Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Total Forms
+              </Text>
             </View>
             <View className="items-center flex-1">
               <Text className="text-2xl font-bold text-gray-800 dark:text-white">
                 {forms.reduce((acc, form) => acc + (form.downloads || 0), 0)}
               </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm">Downloads</Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm">
+                Downloads
+              </Text>
             </View>
           </View>
         </View>
@@ -149,10 +163,10 @@ export default function ManageFormsScreen() {
               {/* Form Header */}
               <View className="flex-row items-start mb-3">
                 <View className="bg-orange-100 dark:bg-orange-900/30 rounded-lg p-3 mr-3">
-                  <Ionicons 
-                    name={getFileIcon(form.fileType)} 
-                    size={24} 
-                    color="#EA580C" 
+                  <Ionicons
+                    name={getFileIcon(form.fileType)}
+                    size={24}
+                    color="#EA580C"
                   />
                 </View>
                 <View className="flex-1">
@@ -221,10 +235,17 @@ export default function ManageFormsScreen() {
         transparent={true}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white dark:bg-gray-800 rounded-t-3xl" style={{ maxHeight: '90%' }}>
-            <ScrollView className="p-6">
-              <View className="flex-row justify-between items-center mb-4">
+        <View className="flex-1 justify-end bg-black/60">
+          <KeyboardAwareScrollView
+            enableOnAndroid
+            keyboardShouldPersistTaps="handled"
+            extraScrollHeight={Platform.OS === "ios" ? 20 : 40}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 0 }}
+            style={{ maxHeight: "90%" }}
+          >
+            <View className="bg-white dark:bg-gray-800 p-6 rounded-t-3xl">
+              <View className="flex-row justify-between items-center mb-6">
                 <Text className="text-xl font-bold text-gray-800 dark:text-white">
                   Upload Form
                 </Text>
@@ -233,77 +254,90 @@ export default function ManageFormsScreen() {
                 </TouchableOpacity>
               </View>
 
-              <TextInput
-                placeholder="Form Title *"
-                value={formData.title}
-                onChangeText={(text) => setFormData({...formData, title: text})}
-                className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-3 text-gray-800 dark:text-white"
-                placeholderTextColor="#9CA3AF"
-              />
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <TextInput
+                  placeholder="Form Title *"
+                  value={formData.title}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, title: text })
+                  }
+                  className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-3 text-gray-800 dark:text-white"
+                  placeholderTextColor="#9CA3AF"
+                />
 
-              <TextInput
-                placeholder="Description"
-                value={formData.description}
-                onChangeText={(text) => setFormData({...formData, description: text})}
-                multiline
-                numberOfLines={3}
-                className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-3 text-gray-800 dark:text-white"
-                placeholderTextColor="#9CA3AF"
-                style={{ textAlignVertical: 'top' }}
-              />
+                <TextInput
+                  placeholder="Description"
+                  value={formData.description}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, description: text })
+                  }
+                  multiline
+                  numberOfLines={3}
+                  className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-3 text-gray-800 dark:text-white"
+                  placeholderTextColor="#9CA3AF"
+                  style={{ textAlignVertical: "top" }}
+                />
 
-              <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
-                Category
-              </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
-                {categories.map((category) => (
-                  <TouchableOpacity
-                    key={category}
-                    onPress={() => setFormData({...formData, category})}
-                    className={`mr-2 px-4 py-2 rounded-lg ${
-                      formData.category === category
-                        ? "bg-orange-500"
-                        : "bg-gray-200 dark:bg-gray-700"
-                    }`}
-                  >
-                    <Text className={`text-sm ${
-                      formData.category === category
-                        ? "text-white"
-                        : "text-gray-700 dark:text-gray-300"
-                    }`}>
-                      {category}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              {/* File Picker */}
-              <TouchableOpacity
-                onPress={handlePickDocument}
-                className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-3 flex-row items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600"
-              >
-                <Ionicons name="attach" size={24} color="#9CA3AF" />
-                <Text className="text-gray-600 dark:text-gray-400 ml-2">
-                  {formData.fileName || "Select File *"}
+                <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
+                  Category
                 </Text>
-              </TouchableOpacity>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  className="mb-3"
+                >
+                  {categories.map((category) => (
+                    <TouchableOpacity
+                      key={category}
+                      onPress={() => setFormData({ ...formData, category })}
+                      className={`mr-2 px-4 py-2 rounded-lg ${
+                        formData.category === category
+                          ? "bg-orange-500"
+                          : "bg-gray-200 dark:bg-gray-700"
+                      }`}
+                    >
+                      <Text
+                        className={`text-sm ${
+                          formData.category === category
+                            ? "text-white"
+                            : "text-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        {category}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
 
-              {formData.fileName && (
-                <View className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-3">
-                  <Text className="text-blue-600 dark:text-blue-400 text-sm">
-                    ✓ {formData.fileName} ({getFileSizeText(formData.fileSize)})
+                {/* File Picker */}
+                <TouchableOpacity
+                  onPress={handlePickDocument}
+                  className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-3 flex-row items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600"
+                >
+                  <Ionicons name="attach" size={24} color="#9CA3AF" />
+                  <Text className="text-gray-600 dark:text-gray-400 ml-2">
+                    {formData.fileName || "Select File *"}
                   </Text>
-                </View>
-              )}
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={handleAddForm}
-                className="bg-orange-500 rounded-lg p-4 items-center mb-6"
-              >
-                <Text className="text-white font-semibold">Upload Form</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
+                {formData.fileName && (
+                  <View className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-3">
+                    <Text className="text-blue-600 dark:text-blue-400 text-sm">
+                      ✓ {formData.fileName} (
+                      {getFileSizeText(formData.fileSize)})
+                    </Text>
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  onPress={handleAddForm}
+                  className="bg-orange-500 rounded-lg p-4 items-center mb-6"
+                >
+                  <Text className="text-white font-semibold">Upload Form</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          </KeyboardAwareScrollView>
         </View>
       </Modal>
     </View>

@@ -18,6 +18,7 @@ import ManageJobsFormsScreen from "../screens/Admin/ManageJobsFormsScreen";
 import WelcomeScreen from "../screens/Public/WelcomeScreen";
 import DeveloperPage from "../screens/Public/DeveloperPage";
 import UserGuideScreen from "../screens/Support/UserGuideScreen";
+import AboutScreen from "../screens/Public/AboutScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -65,9 +66,10 @@ export default function AdminNavigator({ role }) {
       /> */}
       <Drawer.Screen name="Profile" component={ProfileScreen} />
       <Drawer.Screen name="Settings" component={SettingsScreen} />
-      <Drawer.Screen name="Help" component={HelpSupportScreen} />
+      <Drawer.Screen name="HelpSupport" component={HelpSupportScreen} />
       <Drawer.Screen name="UserGuide" component={UserGuideScreen} />
       <Drawer.Screen name="Welcome" component={WelcomeScreen} />
+      <Drawer.Screen name="About" component={AboutScreen} />
     </Drawer.Navigator>
   );
 }

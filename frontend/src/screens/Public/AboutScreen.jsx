@@ -449,7 +449,7 @@ export default function AboutScreen({ navigation }) {
                   Website
                 </Text>
               </View>
-              <TouchableOpacity onPress={() => openUrl("https://csc.gov.in")}>
+              <TouchableOpacity onPress={() => openUrl("https://sr-shields.vercel.app/")}>
                 <Text className="text-blue-600 dark:text-blue-400">
                   https://sr-shields.vercel.app/
                 </Text>

@@ -72,6 +72,9 @@ const useAuthStore = create((set, get) => ({
             token: authData.token,
             isLoading: false,
           });
+          if (authData.token) {
+            await registerPushToken();
+          }
 
           console.log("✅ Auto-login successful:", authData?.user?.email);
         } else {
@@ -95,13 +98,13 @@ const useAuthStore = create((set, get) => ({
       set({ isLoading: true });
       console.log(`🔐 Attempting login for: ${email}`);
 
-      const { data, error } = await api.post("/auth/login", {
+      const { data } = await api.post("/auth/login", {
         email,
         password,
       });
 
       console.log(data);
-      console.log(error);
+      // console.log(error);
 
       // Extract data from response
       const { user, token } = data.data;
@@ -125,34 +128,35 @@ const useAuthStore = create((set, get) => ({
         isLoading: false,
       });
 
-      await registerPushToken();
+      // await registerPushToken();
 
-      Toast.show({
-        type: "success",
-        text1: "Login Successful",
-        text2: "Welcome back! 👋",
-        position: "top",
-        visibilityTime: 3000,
-      });
+      // Toast.show({
+      //   type: "success",
+      //   text1: "Login Successful",
+      //   text2: "Welcome back! 👋",
+      //   position: "top",
+      //   visibilityTime: 3000,
+      // });
 
       console.log("✅ Login successful:", user?.email);
 
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
-      console.error("Login error:", error);
-
-      Toast.show({
-        type: "error",
-        text1: "Login Failed",
-      });
-
-      // Handle different error responses
       const errorMessage =
         error.response?.data?.message || error.message || "Login failed";
 
+      // Toast.show({
+      //   type: "error",
+      //   text1: "Login Failed",
+      //   text2: errorMessage || "Please check your credentials.",
+      // });
+
+      // Handle different error responses
+
+      console.log("Login error:", error);
       return { success: false, error: errorMessage };
-    } 
+    }
   },
 
   // Register
@@ -227,7 +231,7 @@ const useAuthStore = create((set, get) => ({
         console.log("✅ Logout successful", data);
       }
     } catch (error) {
-      console.error("❌ Logout error:", error);
+      console.log("❌ Logout error:", error);
       Toast.show({
         type: "error",
         text1: "Logout Failed",

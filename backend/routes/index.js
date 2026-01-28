@@ -8,9 +8,12 @@ import jobRoutes from "./jobRoutes.js";
 import formRoutes from "./formRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import { contactForm } from "../controllers/contactController.js";
+import { generateOTP, verifyOTP } from "../controllers/otp.controller.js";
 const mainRouter = express.Router();
 
 mainRouter.post("/sendMessage", contactForm);
+mainRouter.post("/send-otp", generateOTP);
+mainRouter.post("/verify-otp", verifyOTP);
 mainRouter.use("/auth", authRoutes);
 mainRouter.use('/user', userProfileRoutes);
 mainRouter.use('/users', userRoutes);
