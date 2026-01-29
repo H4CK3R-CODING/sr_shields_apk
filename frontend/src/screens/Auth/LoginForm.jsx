@@ -165,7 +165,11 @@ export default function LoginForm({
               Forgot Password ?
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("HelpSupport", { initialTab: "query" })
+            }
+          >
             <Text className="text-gray-600 dark:text-gray-400 font-medium">
               Need Help?
             </Text>

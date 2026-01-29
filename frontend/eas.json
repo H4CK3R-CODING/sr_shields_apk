@@ -9,21 +9,21 @@
       "distribution": "internal",
       "channel": "development",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://sr-shields-apk.onrender.com/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://sr-shields-apk.vercel.app/api/v1"
       }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://sr-shields-apk.onrender.com/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://sr-shields-apk.vercel.app/api/v1"
       }
     },
     "production": {
       "autoIncrement": true,
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://sr-shields-apk.onrender.com/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://sr-shields-apk.vercel.app/api/v1"
       }
     }
   },
