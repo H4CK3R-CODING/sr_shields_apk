@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Linking,
   Dimensions,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -40,6 +41,31 @@ export default function AboutScreen({ navigation }) {
       color: "#EF4444",
     },
   ];
+
+  const handleContact = (type) => {
+    switch (type) {
+      case "email":
+        Linking.openURL("mailto:gauravrathour0786@gmail.com");
+        break;
+      case "phone":
+        Linking.openURL("tel:+919306341448");
+        break;
+      case "whatsapp":
+        Linking.openURL("https://wa.me/+919306341448");
+        break;
+      case "github":
+        Linking.openURL("https://github.com/H4CK3R-CODING");
+        break;
+      case "twitter":
+        Linking.openURL("https://x.com/Gaurav965393421");
+        break;
+      case "linkedin":
+        Linking.openURL(
+          "https://www.linkedin.com/in/gaurav-rathour-85b878264/",
+        );
+        break;
+    }
+  };
 
   const achievements = [
     // {
@@ -144,7 +170,7 @@ export default function AboutScreen({ navigation }) {
 
   const openUrl = (url) => {
     Linking.openURL(url).catch((err) =>
-      console.error("Failed to open URL:", err)
+      console.error("Failed to open URL:", err),
     );
   };
 
@@ -155,6 +181,93 @@ export default function AboutScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}
         >
+          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+            <View className="flex-1 justify-center px-6 py-12">
+              {/* PROFILE IMAGE */}
+              <View className="items-center mb-8">
+                <View className="relative shadow-2xl">
+                  <View
+                    className="p-1 rounded-[28px] bg-blue-600 dark:bg-gradient-to-r dark:from-blue-500 dark:to-cyan-400"
+                    style={{ borderRadius: 28 }}
+                  >
+                    <Image
+                      source={{
+                        uri: "https://sr-shields.vercel.app/profile.jpeg",
+                      }}
+                      className="w-44 h-44 rounded-[24px]"
+                      style={{ borderRadius: 24 }}
+                    />
+                  </View>
+
+                  {/* VERIFIED BADGE */}
+                  <View className="absolute -bottom-3 -right-3 w-12 h-12 items-center justify-center bg-green-600 dark:bg-green-500 shadow-xl rounded-[14px]">
+                    <Ionicons name="shield-checkmark" size={24} color="white" />
+                  </View>
+                </View>
+              </View>
+
+              {/* NAME */}
+              <Text className="text-4xl font-extrabold text-center tracking-wide text-gray-900 dark:text-white">
+                Sourav Rathour
+              </Text>
+
+              {/* ROLE */}
+              <Text className="text-lg font-semibold text-center mt-2 text-blue-600 dark:text-blue-400">
+                Founder of ✪Mʀ.SR's🛡️Sʜɪᴇʟᴅ CℽBer Cᴀғᴇ☆
+              </Text>
+
+              {/* BIO */}
+              <Text className="text-center leading-6 mt-6 max-w-xl self-center text-gray-600 dark:text-gray-400">
+                We provide all the latest updates about jobs, university
+                notifications, and different types of forms such as
+                scholarships, government forms, and job applications. Our goal
+                is to keep you informed, save your time, and empower you with
+                reliable and trustworthy information.
+              </Text>
+
+              {/* SOCIAL BUTTONS */}
+              {/* <View className="flex-row justify-center gap-4 mt-8">
+                {[
+                  { icon: "logo-linkedin", color: "#0A66C2", type: "linkedin" },
+                  { icon: "logo-github", color: "#000000", type: "github" },
+                  { icon: "logo-twitter", color: "#1DA1F2", type: "twitter" },
+                  { icon: "mail", color: "#EA4335", type: "email" },
+                ].map((social, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleContact(social.type)}
+                    activeOpacity={0.8}
+                    className="w-14 h-14 items-center justify-center rounded-[16px] border bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                  >
+                    <Ionicons
+                      name={social.icon}
+                      size={24}
+                      color={
+                        social.type === "github" ? undefined : social.color
+                      }
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View> */}
+
+              {/* STATS */}
+              {/* <View className="flex-row flex-wrap justify-center gap-4 mt-10">
+                        {stats.map((stat, index) => (
+                          <View
+                            key={index}
+                            className="px-8 py-4 min-w-[120px] items-center rounded-[16px] border bg-white dark:bg-white/5 border-gray-200 dark:border-white/10"
+                          >
+                            <Text className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                              {stat.value}
+                            </Text>
+                            <Text className="text-xs mt-1 tracking-wide uppercase text-gray-500 dark:text-gray-400">
+                              {stat.label}
+                            </Text>
+                          </View>
+                        ))}
+                      </View> */}
+            </View>
+          </ScrollView>
           {/* Hero Section */}
           <View className="mx-4 mt-4">
             <LinearGradient
@@ -215,8 +328,8 @@ export default function AboutScreen({ navigation }) {
               <Text className="text-gray-600 dark:text-gray-300 leading-6 mb-4">
                 Common Service Centers (CSC) are the access points for delivery
                 of essential public utility services, social welfare schemes,
-                healthcare, financial, education and agriculture services,
-                apart from a host of B2C services to citizens at their doorstep.
+                healthcare, financial, education and agriculture services, apart
+                from a host of B2C services to citizens at their doorstep.
               </Text>
               <Text className="text-gray-600 dark:text-gray-300 leading-6 mb-4">
                 CSC enables three pronged strategy of CSC 2.0 as Service
@@ -401,7 +514,11 @@ export default function AboutScreen({ navigation }) {
                     className="flex-row items-center bg-gray-100 dark:bg-gray-700 rounded-xl px-4 py-3"
                     style={{ minWidth: (width - 80) / 2 - 6 }}
                   >
-                    <Ionicons name={social.icon} size={20} color={social.color} />
+                    <Ionicons
+                      name={social.icon}
+                      size={20}
+                      color={social.color}
+                    />
                     <Text className="text-gray-900 dark:text-white font-semibold ml-2">
                       {social.label}
                     </Text>
@@ -449,7 +566,9 @@ export default function AboutScreen({ navigation }) {
                   Website
                 </Text>
               </View>
-              <TouchableOpacity onPress={() => openUrl("https://sr-shields.vercel.app/")}>
+              <TouchableOpacity
+                onPress={() => openUrl("https://sr-shields.vercel.app/")}
+              >
                 <Text className="text-blue-600 dark:text-blue-400">
                   https://sr-shields.vercel.app/
                 </Text>

@@ -1,5 +1,5 @@
 import express from "express";
-import { getProfile, loginUser, registerUser } from "../controllers/auth.controller.js";
+import { getProfile, loginUser, registerUser, resetPassword, sendPasswordResetOTP } from "../controllers/auth.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -13,6 +13,12 @@ const router = express.Router();
 // Public routes
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+
+
+// Password Reset Routes
+router.post('/forgot-password/send-otp', sendPasswordResetOTP);
+router.post('/forgot-password/reset', resetPassword);
+
 
 // Protected routes
 router.get('/profile', protect, getProfile);

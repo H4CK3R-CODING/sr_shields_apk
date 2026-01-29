@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import useAuthStore from "../../state/authStore";
 import Toast from "react-native-toast-message";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { sendOTP, verifyOTP } from "../../services/authService";
 
 export default function RegistrationPage({ navigation }) {
   const { register } = useAuthStore();
@@ -26,6 +27,7 @@ export default function RegistrationPage({ navigation }) {
     phone: "",
     password: "",
     confirmPassword: "",
+    isEmailVerified: false,
     role: "user", // user or admin
     // Admin specific fields
     department: "",
@@ -39,7 +41,15 @@ export default function RegistrationPage({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [step, setStep] = useState(1); // Multi-step form: 1 = Basic Info, 2 = Role Selection, 3 = Additional Info
+  const [step, setStep] = useState(1); // Multi-step form: 1 = Basic Info, 2 = Email Verification, 3 = Role Selection, 4 = Additional Info
+
+  // OTP State
+  const [otp, setOtp] = useState(["", "", "", "", ""]);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  // const [otpInputRefs, setOtpInputRefs] = useState([]);
+  const otpInputRefs = React.useRef([]);
 
   // Validate email format
   const isValidEmail = (email) => {
@@ -103,8 +113,8 @@ export default function RegistrationPage({ navigation }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Validate Step 3 (Additional Info)
-  const validateStep3 = () => {
+  // Validate Step 4 (Additional Info)
+  const validateStep4 = () => {
     const newErrors = {};
 
     if (formData.role === "admin") {
@@ -129,12 +139,161 @@ export default function RegistrationPage({ navigation }) {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Send OTP to email
+  const handleSendOTP = async () => {
+    setLoading(true);
+    try {
+      const response = await sendOTP(formData.email);
+
+      if (response.success) {
+        setOtpSent(true);
+        Toast.show({
+          type: "success",
+          text1: "OTP Sent",
+          text2: `Verification code sent to ${formData.email}`,
+          position: "top",
+          visibilityTime: 3000,
+        });
+
+        // Start resend timer (5 minutes = 300 seconds)
+        setResendTimer(300);
+        const interval = setInterval(() => {
+          setResendTimer((prev) => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Failed to Send OTP",
+          text2: response.message || "Please try again",
+          position: "top",
+          visibilityTime: 3000,
+        });
+      }
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to send OTP. Please try again.",
+        position: "top",
+        visibilityTime: 3000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Verify OTP
+  const handleVerifyOTP = async () => {
+    const otpCode = otp.join("");
+
+    if (otpCode.length !== 5) {
+      // Changed from 6 to 5
+      Toast.show({
+        type: "error",
+        text1: "Invalid OTP",
+        text2: "Please enter all 5 digits", // Changed from 6 to 5
+        position: "top",
+        visibilityTime: 2000,
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await verifyOTP(formData.email, otpCode);
+
+      if (response.success) {
+        setOtpVerified(true);
+        setFormData({ ...formData, isEmailVerified: true });
+        Toast.show({
+          type: "success",
+          text1: "Email Verified",
+          text2: "Your email has been verified successfully",
+          position: "top",
+          visibilityTime: 2000,
+        });
+
+        // Move to next step after a short delay
+        setTimeout(() => {
+          setStep(3);
+        }, 1000);
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Invalid OTP",
+          text2: response.message || "Please check the code and try again",
+          position: "top",
+          visibilityTime: 3000,
+        });
+        // Clear OTP inputs (changed to 5 empty strings)
+        setOtp(["", "", "", "", ""]);
+        if (otpInputRefs.current[0]) {
+          otpInputRefs.current[0].focus();
+        }
+      }
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Verification Failed",
+        text2: "Please try again",
+        position: "top",
+        visibilityTime: 3000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle OTP input change
+  const handleOtpChange = (value, index) => {
+    if (!/^\d*$/.test(value)) return; // Only allow digits
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    // Auto-focus next input (changed from index < 5 to index < 4)
+    if (value && index < 4) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  // Handle OTP backspace
+  const handleOtpKeyPress = (e, index) => {
+    if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
   // Handle Next button
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1 && validateStep1()) {
+      // Send OTP when moving to step 2
       setStep(2);
+      if (!otpSent) {
+        await handleSendOTP();
+      }
     } else if (step === 2) {
+      // Verify OTP before proceeding
+      if (!otpVerified) {
+        Toast.show({
+          type: "error",
+          text1: "Email Not Verified",
+          text2: "Please verify your email to continue",
+          position: "top",
+          visibilityTime: 2000,
+        });
+        return;
+      }
       setStep(3);
+    } else if (step === 3) {
+      setStep(4);
     }
   };
 
@@ -148,42 +307,52 @@ export default function RegistrationPage({ navigation }) {
 
   // Handle Registration
   const handleRegister = async () => {
-    if (!validateStep3()) return;
+    if (!validateStep4()) return;
+
+    if (!otpVerified) {
+      Toast.show({
+        type: "error",
+        text1: "Email Not Verified",
+        text2: "Please verify your email first",
+        position: "top",
+        visibilityTime: 3000,
+      });
+      return;
+    }
 
     setLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
       // Prepare user data
       const userData = {
         fullName: formData.fullName.trim(),
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
         role: formData.role,
+        emailVerified: true,
+        isEmailVerified: formData.isEmailVerified,
         confirmPassword: formData.confirmPassword,
         createdAt: new Date().toISOString(),
       };
 
-      const [day, month, year] = formData.dateOfBirth.trim().split("/");
-
-      // Add role-specific data
-      if (formData.role === "admin") {
-        userData.department = formData.department.trim();
-      } else {
+      if (formData.role === "user") {
+        const [day, month, year] = formData.dateOfBirth.trim().split("/");
         userData.address = formData.address.trim();
         userData.dateOfBirth = new Date(`${year}-${month}-${day}`);
         userData.gender = formData.gender.toLowerCase();
+      } else {
+        userData.department = formData.department.trim();
       }
 
       // Call register function from auth store
       console.log("Registering user with data:", userData);
       const { error } = await register(userData, formData.password);
+
       if (error) {
         Toast.show({
           type: "error",
           text1: "Registration Failed",
+          text2: error,
           position: "top",
           visibilityTime: 3000,
         });
@@ -191,19 +360,23 @@ export default function RegistrationPage({ navigation }) {
         Toast.show({
           type: "success",
           text1: "Registration Successful",
-          text2: "You can now log in 👋",
+          text2: "Welcome! You can now log in 🎉",
           position: "top",
           visibilityTime: 3000,
         });
-        // Wait a bit, then navigate
+
+        // Navigate to login after delay
         setTimeout(() => {
           navigation.navigate("Login");
-        }, 1500); // Navigate after 1.5 seconds
+        }, 1500);
       }
     } catch (error) {
       Toast.show({
         type: "error",
         text1: "Registration Failed",
+        text2: "An unexpected error occurred",
+        position: "top",
+        visibilityTime: 3000,
       });
     } finally {
       setLoading(false);
@@ -369,8 +542,113 @@ export default function RegistrationPage({ navigation }) {
     </View>
   );
 
-  // Render Step 2: Role Selection
+  // Render Step 2: Email Verification
   const renderStep2 = () => (
+    <View>
+      <View className="items-center mb-6">
+        <View className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full items-center justify-center mb-4">
+          <Ionicons name="mail-outline" size={40} color="#3B82F6" />
+        </View>
+        <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2 text-center">
+          Verify Your Email
+        </Text>
+        <Text className="text-gray-600 dark:text-gray-400 text-center px-4">
+          We've sent a 5-digit verification code to
+        </Text>
+        <Text className="text-blue-500 font-semibold mt-1">
+          {formData.email}
+        </Text>
+      </View>
+
+      {/* OTP Input */}
+      <View className="mb-6">
+        <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-3 text-center">
+          Enter 5-Digit Verification Code
+        </Text>
+        <View className="flex-row justify-center space-x-2">
+          {otp.map((digit, index) => (
+            <View
+              key={index}
+              className={`w-12 h-14 bg-gray-100 dark:bg-gray-700 rounded-xl mx-1 ${
+                otpVerified ? "border-2 border-green-500" : ""
+              }`}
+            >
+              <TextInput
+                ref={(ref) => {
+                  otpInputRefs.current[index] = ref;
+                }}
+                value={digit}
+                onChangeText={(value) => handleOtpChange(value, index)}
+                onKeyPress={(e) => handleOtpKeyPress(e, index)}
+                keyboardType="number-pad"
+                maxLength={1}
+                className="flex-1 text-center text-xl font-bold text-gray-800 dark:text-white"
+                placeholderTextColor="#9CA3AF"
+                editable={!otpVerified}
+              />
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Verify Button */}
+      {!otpVerified && (
+        <TouchableOpacity
+          onPress={handleVerifyOTP}
+          disabled={loading || otp.join("").length !== 5} // Changed from 6 to 5
+          className={`rounded-xl py-4 items-center mb-4 ${
+            loading || otp.join("").length !== 5
+              ? "bg-gray-300 dark:bg-gray-600"
+              : "bg-blue-500"
+          }`}
+        >
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="text-white font-bold text-lg">Verify Code</Text>
+          )}
+        </TouchableOpacity>
+      )}
+
+      {/* Resend OTP */}
+      <View className="items-center mt-4">
+        <Text className="text-gray-600 dark:text-gray-400 mb-2">
+          Didn't receive the code?
+        </Text>
+        {resendTimer > 0 ? (
+          <Text className="text-gray-500 dark:text-gray-400">
+            Resend in {Math.floor(resendTimer / 60)}:
+            {String(resendTimer % 60).padStart(2, "0")}
+          </Text>
+        ) : (
+          <TouchableOpacity onPress={handleSendOTP} disabled={loading}>
+            <Text className="text-blue-500 font-semibold">
+              {loading ? "Sending..." : "Resend Code"}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Change Email */}
+      <TouchableOpacity
+        onPress={() => {
+          setStep(1);
+          setOtpSent(false);
+          setOtpVerified(false);
+          setOtp(["", "", "", "", ""]); // Changed from 6 to 5
+        }}
+        className="mt-6"
+      >
+        <Text className="text-gray-600 dark:text-gray-400 text-center">
+          Wrong email?{" "}
+          <Text className="text-blue-500 font-semibold">Change Email</Text>
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Render Step 3: Role Selection
+  const renderStep3 = () => (
     <View>
       <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
         Select Your Role
@@ -478,48 +756,24 @@ export default function RegistrationPage({ navigation }) {
         <View className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-3 flex-row items-start">
           <Ionicons name="information-circle" size={18} color="#F59E0B" />
           <Text className="text-orange-600 dark:text-orange-400 text-xs ml-2 flex-1">
-            Requires admin code verification
+            Admin accounts have additional privileges
           </Text>
         </View>
       </TouchableOpacity>
     </View>
   );
 
-  // Render Step 3: Additional Information
-  const renderStep3 = () => {
+  // Render Step 4: Additional Information
+  const renderStep4 = () => {
     if (formData.role === "admin") {
       return (
         <View>
           <Text className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-            Admin Verification
+            Admin Details
           </Text>
           <Text className="text-gray-600 dark:text-gray-400 mb-6">
             Complete your admin account setup
           </Text>
-
-          {/* Admin Code */}
-          {/* <View className="mb-4">
-            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
-              Admin Code *
-            </Text>
-            <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.adminCode ? 'border-2 border-red-500' : ''}`}>
-              <Ionicons name="key-outline" size={20} color="#9CA3AF" />
-              <TextInput
-                placeholder="Enter admin verification code"
-                value={formData.adminCode}
-                onChangeText={(text) => updateField("adminCode", text)}
-                secureTextEntry
-                className="flex-1 p-4 text-gray-800 dark:text-white"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
-            {errors.adminCode && (
-              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.adminCode}</Text>
-            )}
-            <Text className="text-gray-500 dark:text-gray-400 text-xs mt-1 ml-1">
-              Contact your organization for the admin code
-            </Text>
-          </View> */}
 
           {/* Department */}
           <View className="mb-4">
@@ -544,26 +798,6 @@ export default function RegistrationPage({ navigation }) {
               </Text>
             )}
           </View>
-
-          {/* Employee ID */}
-          {/* <View className="mb-6">
-            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2">
-              Employee ID *
-            </Text>
-            <View className={`bg-gray-100 dark:bg-gray-700 rounded-xl flex-row items-center px-4 ${errors.employeeId ? 'border-2 border-red-500' : ''}`}>
-              <Ionicons name="card-outline" size={20} color="#9CA3AF" />
-              <TextInput
-                placeholder="Your employee ID"
-                value={formData.employeeId}
-                onChangeText={(text) => updateField("employeeId", text)}
-                className="flex-1 p-4 text-gray-800 dark:text-white"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
-            {errors.employeeId && (
-              <Text className="text-red-500 text-sm mt-1 ml-1">{errors.employeeId}</Text>
-            )}
-          </View>*/}
         </View>
       );
     } else {
@@ -693,7 +927,7 @@ export default function RegistrationPage({ navigation }) {
 
           {/* Progress Indicator */}
           <View className="flex-row mb-4">
-            {[1, 2, 3].map((s) => (
+            {[1, 2, 3, 4].map((s) => (
               <View
                 key={s}
                 className={`h-2 flex-1 rounded-full mr-2 ${
@@ -703,7 +937,7 @@ export default function RegistrationPage({ navigation }) {
             ))}
           </View>
           <Text className="text-gray-600 dark:text-gray-400">
-            Step {step} of 3
+            Step {step} of 4
           </Text>
         </View>
 
@@ -712,12 +946,23 @@ export default function RegistrationPage({ navigation }) {
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
+          {step === 4 && renderStep4()}
         </View>
       </KeyboardAwareScrollView>
 
       {/* Bottom Action Buttons */}
       <View className="bg-white dark:bg-gray-800 p-6 shadow-lg">
-        {step < 3 ? (
+        {step === 2 ? (
+          // Email verification step - button handled in renderStep2
+          otpVerified && (
+            <TouchableOpacity
+              onPress={handleNext}
+              className="bg-blue-500 rounded-xl py-4 items-center"
+            >
+              <Text className="text-white font-bold text-lg">Continue</Text>
+            </TouchableOpacity>
+          )
+        ) : step < 4 ? (
           <TouchableOpacity
             onPress={handleNext}
             className="bg-blue-500 rounded-xl py-4 items-center"

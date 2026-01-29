@@ -41,11 +41,19 @@ const otpSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    purpose: {
+      type: String,
+      enum: ['registration', 'password_reset'],
+      default: 'registration',
+    },
   },
   {
     timestamps: true,
   }
 );
+
+// Compound index for email and purpose
+otpSchema.index({ email: 1, purpose: 1 });
 
 // Index for automatic cleanup of expired OTPs
 otpSchema.index({ otpExpiration: 1 }, { expireAfterSeconds: 0 });

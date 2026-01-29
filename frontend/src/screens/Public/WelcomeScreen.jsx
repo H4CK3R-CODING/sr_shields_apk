@@ -88,7 +88,7 @@ export default function CSCWelcomeScreen({ navigation }) {
   };
 
   return (
-    <NavLayout title="CSC Services" showAiChat={false}>
+    <NavLayout title="Mʀ.SR's🛡️Sʜɪᴇʟᴅ" showAiChat={false}>
       <View className="flex-1 bg-blue-50 dark:bg-gray-900">
         <ScrollView
           showsVerticalScrollIndicator={false}

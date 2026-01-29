@@ -1,6 +1,6 @@
-import genOtp from '../utils/genOtp.js';
-import sendMail from '../utils/sendMail.js';
-import OTPModel from '../models/Otp.model.js';
+import genOtp from "../utils/genOtp.js";
+import sendMail from "../utils/sendMail.js";
+import OTPModel from "../models/Otp.model.js";
 
 // OTP Model Schema (for reference - implement in your database)
 /*
@@ -22,7 +22,7 @@ OTP Schema:
 
 // Configuration constants
 const OTP_CONFIG = {
-  OTP_EXPIRATION_TIME: 10 * 60 * 1000, // 10 minutes in milliseconds
+  OTP_EXPIRATION_TIME: 5 * 60 * 1000, // 5 minutes in milliseconds
   MAX_VERIFICATION_ATTEMPTS: 5,
   MAX_RATE_LIMIT_ATTEMPTS: 3,
   RATE_LIMIT_WINDOW: 15 * 60 * 1000, // 15 minutes in milliseconds
@@ -39,7 +39,7 @@ export const generateOTP = async (req, res) => {
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: 'Email is required',
+        message: "Email is required",
       });
     }
 
@@ -48,7 +48,7 @@ export const generateOTP = async (req, res) => {
     if (!emailRegex.test(email)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid email format',
+        message: "Invalid email format",
       });
     }
 
@@ -58,12 +58,12 @@ export const generateOTP = async (req, res) => {
     // Rate limiting check
     if (otpRecord) {
       const now = new Date();
-      
+
       // Check if rate limit window is still active
       if (otpRecord.rateLimitWindow && otpRecord.rateLimitWindow > now) {
         if (otpRecord.rateLimitCount >= OTP_CONFIG.MAX_RATE_LIMIT_ATTEMPTS) {
           const remainingTime = Math.ceil(
-            (otpRecord.rateLimitWindow - now) / 1000 / 60
+            (otpRecord.rateLimitWindow - now) / 1000 / 60,
           );
           return res.status(429).json({
             success: false,
@@ -73,7 +73,9 @@ export const generateOTP = async (req, res) => {
       } else {
         // Reset rate limit if window has expired
         otpRecord.rateLimitCount = 0;
-        otpRecord.rateLimitWindow = new Date(now.getTime() + OTP_CONFIG.RATE_LIMIT_WINDOW);
+        otpRecord.rateLimitWindow = new Date(
+          now.getTime() + OTP_CONFIG.RATE_LIMIT_WINDOW,
+        );
       }
 
       // Check resend cooldown
@@ -81,7 +83,7 @@ export const generateOTP = async (req, res) => {
         const timeSinceLastOTP = now - otpRecord.updatedAt;
         if (timeSinceLastOTP < OTP_CONFIG.RESEND_COOLDOWN) {
           const remainingSeconds = Math.ceil(
-            (OTP_CONFIG.RESEND_COOLDOWN - timeSinceLastOTP) / 1000
+            (OTP_CONFIG.RESEND_COOLDOWN - timeSinceLastOTP) / 1000,
           );
           return res.status(429).json({
             success: false,
@@ -93,6 +95,7 @@ export const generateOTP = async (req, res) => {
 
     // Generate new OTP
     const otp = genOtp();
+    console.log(`Generated OTP for ${email}: ${otp}`); // For debugging; remove in production
     const otpExpiration = new Date(Date.now() + OTP_CONFIG.OTP_EXPIRATION_TIME);
 
     if (otpRecord) {
@@ -119,7 +122,7 @@ export const generateOTP = async (req, res) => {
     }
 
     // Send OTP via email
-    const subject = 'Your OTP Verification Code';
+    const subject = "Your OTP Verification Code";
     const message = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>OTP Verification</h2>
@@ -139,15 +142,14 @@ export const generateOTP = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'OTP sent successfully to your email',
+      message: "OTP sent successfully to your email",
       expiresIn: OTP_CONFIG.OTP_EXPIRATION_TIME / 1000, // in seconds
     });
-
   } catch (error) {
-    console.error('Generate OTP Error:', error);
+    console.error("Generate OTP Error:", error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to generate OTP',
+      message: "Failed to generate OTP",
       error: error.message,
     });
   }
@@ -163,7 +165,7 @@ export const verifyOTP = async (req, res) => {
     if (!email || !otp) {
       return res.status(400).json({
         success: false,
-        message: 'Email and OTP are required',
+        message: "Email and OTP are required",
       });
     }
 
@@ -173,7 +175,7 @@ export const verifyOTP = async (req, res) => {
     if (!otpRecord) {
       return res.status(404).json({
         success: false,
-        message: 'No OTP found for this email. Please request a new one.',
+        message: "No OTP found for this email. Please request a new one.",
       });
     }
 
@@ -181,7 +183,7 @@ export const verifyOTP = async (req, res) => {
     if (otpRecord.isVerified) {
       return res.status(400).json({
         success: false,
-        message: 'OTP already verified',
+        message: "OTP already verified",
       });
     }
 
@@ -189,7 +191,7 @@ export const verifyOTP = async (req, res) => {
     if (new Date() > otpRecord.otpExpiration) {
       return res.status(400).json({
         success: false,
-        message: 'OTP has expired. Please request a new one.',
+        message: "OTP has expired. Please request a new one.",
       });
     }
 
@@ -197,7 +199,8 @@ export const verifyOTP = async (req, res) => {
     if (otpRecord.attempts >= otpRecord.maxAttempts) {
       return res.status(403).json({
         success: false,
-        message: 'Maximum verification attempts exceeded. Please request a new OTP.',
+        message:
+          "Maximum verification attempts exceeded. Please request a new OTP.",
       });
     }
 
@@ -208,11 +211,10 @@ export const verifyOTP = async (req, res) => {
       await otpRecord.save();
 
       const remainingAttempts = otpRecord.maxAttempts - otpRecord.attempts;
-      
+
       return res.status(400).json({
         success: false,
-        message: 'Invalid OTP',
-        remainingAttempts,
+        message: `You have ${remainingAttempts} attempts left.`,
       });
     }
 
@@ -221,19 +223,18 @@ export const verifyOTP = async (req, res) => {
     await otpRecord.save();
 
     // Optional: Delete OTP record after successful verification
-    // await OTPModel.deleteOne({ email });
+    await OTPModel.deleteOne({ email });
 
     return res.status(200).json({
       success: true,
-      message: 'OTP verified successfully',
+      message: "OTP verified successfully",
       email: otpRecord.email,
     });
-
   } catch (error) {
-    console.error('Verify OTP Error:', error);
+    console.error("Verify OTP Error:", error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to verify OTP',
+      message: "Failed to verify OTP",
       error: error.message,
     });
   }
@@ -258,6 +259,6 @@ export const cleanupExpiredOTPs = async () => {
     console.log(`Cleaned up ${result.deletedCount} expired OTP records`);
     return result;
   } catch (error) {
-    console.error('Cleanup OTP Error:', error);
+    console.error("Cleanup OTP Error:", error);
   }
 };

@@ -342,7 +342,7 @@ export default function UserDashboardScreen({ navigation }) {
   const urgentNotifications = 0;
 
   return (
-    <NavLayout title="CSC Portal" showAIChat={false}>
+    <NavLayout title="Mʀ.SR's🛡️Sʜɪᴇʟᴅ" showAIChat={false}>
       <ScrollView
         className="flex-1 bg-gray-50 dark:bg-gray-900"
         refreshControl={

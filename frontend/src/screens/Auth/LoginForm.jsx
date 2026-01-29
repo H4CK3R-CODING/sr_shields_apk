@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import CustomButton from "@/src/components/CustomButton";
+import { useNavigation } from "@react-navigation/native";
 
 /**
  * Reusable Login Form Component
@@ -21,10 +22,12 @@ export default function LoginForm({
   onLogin,
   onClose,
   isLoading = false,
+  // navigation,
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const navigation = useNavigation();
 
   const renderIcon = () => {
     const { icon, iconLib } = roleInfo;
@@ -155,9 +158,11 @@ export default function LoginForm({
 
         {/* Additional Options */}
         <View className="flex-row justify-between items-center pt-4">
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("ForgotPassword")}
+          >
             <Text className="text-blue-600 dark:text-blue-400 font-medium">
-              Forgot Password?
+              Forgot Password ?
             </Text>
           </TouchableOpacity>
           <TouchableOpacity>

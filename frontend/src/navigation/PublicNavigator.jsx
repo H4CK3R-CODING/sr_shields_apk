@@ -13,6 +13,7 @@ import ProfileScreen from "../screens/Profile/ProfileScreen";
 import HelpSupportScreen from "../screens/Support/HelpSupportScreen";
 import UserGuideScreen from "../screens/Support/UserGuideScreen";
 import DeveloperPage from "../screens/Public/DeveloperPage";
+import ForgotPasswordPage from "../screens/Auth/ForgotPasswordPage";
 
 const Drawer = createDrawerNavigator();
 
@@ -35,6 +36,7 @@ export default function PublizcNavigator() {
       <Drawer.Screen name="Developer" component={DeveloperPage} />
       <Drawer.Screen name="Login" component={LoginScreen} />
       <Drawer.Screen name="Register" component={RegistrationPage} />
+      <Drawer.Screen name="ForgotPassword" component={ForgotPasswordPage} />
     </Drawer.Navigator>
   );
 }
