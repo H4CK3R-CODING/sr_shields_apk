@@ -42,8 +42,13 @@ app.use("/", (req, res, next) => {
 app.use("/api/v1", mainRouter);
 
 app.get("/", (req, res) => {
-  console.log("Ping-backend: " + new Date().toLocaleString());
+  console.log("route \n","Ping-backend: " + new Date().toLocaleString());
   res.json({ msg: "Hello" });
+});
+
+app.get("/health", (req, res) => {
+  console.log("health : " + new Date().toLocaleString());
+  res.json({ msg: "health route" });
 });
 
 // ✅ Global error handler
